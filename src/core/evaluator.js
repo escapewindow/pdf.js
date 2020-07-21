@@ -44,6 +44,7 @@ import {
   isStream,
   Name,
   Ref,
+  RefSet,
 } from "./primitives.js";
 import {
   ErrorFont,
@@ -75,7 +76,11 @@ import {
 import { getTilingPatternIR, Pattern } from "./pattern.js";
 import { isPDFFunction, PDFFunctionFactory } from "./function.js";
 import { Lexer, Parser } from "./parser.js";
-import { LocalColorSpaceCache, LocalImageCache } from "./image_utils.js";
+import {
+  LocalColorSpaceCache,
+  LocalGStateCache,
+  LocalImageCache,
+} from "./image_utils.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./stream.js";
@@ -237,9 +242,9 @@ class PartialEvaluator {
       return false;
     }
 
-    var processed = Object.create(null);
+    const processed = new RefSet();
     if (resources.objId) {
-      processed[resources.objId] = true;
+      processed.put(resources.objId);
     }
 
     var nodes = [resources],
@@ -249,13 +254,9 @@ class PartialEvaluator {
       // First check the current resources for blend modes.
       var graphicStates = node.get("ExtGState");
       if (graphicStates instanceof Dict) {
-        var graphicStatesKeys = graphicStates.getKeys();
-        for (let i = 0, ii = graphicStatesKeys.length; i < ii; i++) {
-          const key = graphicStatesKeys[i];
-
-          let graphicState = graphicStates.getRaw(key);
+        for (let graphicState of graphicStates.getRawValues()) {
           if (graphicState instanceof Ref) {
-            if (processed[graphicState.toString()]) {
+            if (processed.has(graphicState)) {
               continue; // The ExtGState has already been processed.
             }
             try {
@@ -264,27 +265,18 @@ class PartialEvaluator {
               if (ex instanceof MissingDataException) {
                 throw ex;
               }
-              if (this.options.ignoreErrors) {
-                if (graphicState instanceof Ref) {
-                  // Avoid parsing a corrupt ExtGState more than once.
-                  processed[graphicState.toString()] = true;
-                }
-                // Error(s) in the ExtGState -- sending unsupported feature
-                // notification and allow parsing/rendering to continue.
-                this.handler.send("UnsupportedFeature", {
-                  featureId: UNSUPPORTED_FEATURES.errorExtGState,
-                });
-                warn(`hasBlendModes - ignoring ExtGState: "${ex}".`);
-                continue;
-              }
-              throw ex;
+              // Avoid parsing a corrupt ExtGState more than once.
+              processed.put(graphicState);
+
+              info(`hasBlendModes - ignoring ExtGState: "${ex}".`);
+              continue;
             }
           }
           if (!(graphicState instanceof Dict)) {
             continue;
           }
           if (graphicState.objId) {
-            processed[graphicState.objId] = true;
+            processed.put(graphicState.objId);
           }
 
           const bm = graphicState.get("BM");
@@ -295,8 +287,8 @@ class PartialEvaluator {
             continue;
           }
           if (bm !== undefined && Array.isArray(bm)) {
-            for (let j = 0, jj = bm.length; j < jj; j++) {
-              if (bm[j] instanceof Name && bm[j].name !== "Normal") {
+            for (const element of bm) {
+              if (element instanceof Name && element.name !== "Normal") {
                 return true;
               }
             }
@@ -308,13 +300,9 @@ class PartialEvaluator {
       if (!(xObjects instanceof Dict)) {
         continue;
       }
-      var xObjectsKeys = xObjects.getKeys();
-      for (let i = 0, ii = xObjectsKeys.length; i < ii; i++) {
-        const key = xObjectsKeys[i];
-
-        var xObject = xObjects.getRaw(key);
+      for (let xObject of xObjects.getRawValues()) {
         if (xObject instanceof Ref) {
-          if (processed[xObject.toString()]) {
+          if (processed.has(xObject)) {
             // The XObject has already been processed, and by avoiding a
             // redundant `xref.fetch` we can *significantly* reduce the load
             // time for badly generated PDF files (fixes issue6961.pdf).
@@ -326,41 +314,31 @@ class PartialEvaluator {
             if (ex instanceof MissingDataException) {
               throw ex;
             }
-            if (this.options.ignoreErrors) {
-              if (xObject instanceof Ref) {
-                // Avoid parsing a corrupt XObject more than once.
-                processed[xObject.toString()] = true;
-              }
-              // Error(s) in the XObject -- sending unsupported feature
-              // notification and allow parsing/rendering to continue.
-              this.handler.send("UnsupportedFeature", {
-                featureId: UNSUPPORTED_FEATURES.errorXObject,
-              });
-              warn(`hasBlendModes - ignoring XObject: "${ex}".`);
-              continue;
-            }
-            throw ex;
+            // Avoid parsing a corrupt XObject more than once.
+            processed.put(xObject);
+
+            info(`hasBlendModes - ignoring XObject: "${ex}".`);
+            continue;
           }
         }
         if (!isStream(xObject)) {
           continue;
         }
         if (xObject.dict.objId) {
-          if (processed[xObject.dict.objId]) {
-            continue; // Stream has objId and was processed already.
-          }
-          processed[xObject.dict.objId] = true;
+          processed.put(xObject.dict.objId);
         }
         var xResources = xObject.dict.get("Resources");
+        if (!(xResources instanceof Dict)) {
+          continue;
+        }
         // Checking objId to detect an infinite loop.
-        if (
-          xResources instanceof Dict &&
-          (!xResources.objId || !processed[xResources.objId])
-        ) {
-          nodes.push(xResources);
-          if (xResources.objId) {
-            processed[xResources.objId] = true;
-          }
+        if (xResources.objId && processed.has(xResources.objId)) {
+          continue;
+        }
+
+        nodes.push(xResources);
+        if (xResources.objId) {
+          processed.put(xResources.objId);
         }
       }
     }
@@ -828,14 +806,18 @@ class PartialEvaluator {
     throw reason;
   }
 
-  setGState(
+  async setGState({
     resources,
     gState,
     operatorList,
+    cacheKey,
     task,
     stateManager,
-    localColorSpaceCache
-  ) {
+    localGStateCache,
+    localColorSpaceCache,
+  }) {
+    const gStateRef = gState.objId;
+    let isSimpleGState = true;
     // This array holds the converted/processed state data.
     var gStateObj = [];
     var gStateKeys = gState.getKeys();
@@ -881,6 +863,8 @@ class PartialEvaluator {
             break;
           }
           if (isDict(value)) {
+            isSimpleGState = false;
+
             promise = promise.then(() => {
               return this.handleSMask(
                 value,
@@ -924,6 +908,10 @@ class PartialEvaluator {
     return promise.then(function () {
       if (gStateObj.length > 0) {
         operatorList.addOp(OPS.setGState, [gStateObj]);
+      }
+
+      if (isSimpleGState) {
+        localGStateCache.set(cacheKey, gStateRef, gStateObj);
       }
     });
   }
@@ -1245,6 +1233,7 @@ class PartialEvaluator {
     let parsingText = false;
     const localImageCache = new LocalImageCache();
     const localColorSpaceCache = new LocalColorSpaceCache();
+    const localGStateCache = new LocalGStateCache();
 
     var xobjs = resources.get("XObject") || Dict.empty;
     var patterns = resources.get("Pattern") || Dict.empty;
@@ -1274,7 +1263,8 @@ class PartialEvaluator {
         operation = {},
         i,
         ii,
-        cs;
+        cs,
+        name;
       while (!(stop = timeSlotManager.check())) {
         // The arguments parsed by read() are used beyond this loop, so we
         // cannot reuse the same array on each iteration. Therefore we pass
@@ -1290,7 +1280,7 @@ class PartialEvaluator {
         switch (fn | 0) {
           case OPS.paintXObject:
             // eagerly compile XForm objects
-            var name = args[0].name;
+            name = args[0].name;
             if (name) {
               const localImage = localImageCache.getByName(name);
               if (localImage) {
@@ -1653,23 +1643,64 @@ class PartialEvaluator {
             fn = OPS.shadingFill;
             break;
           case OPS.setGState:
-            var dictName = args[0];
-            var extGState = resources.get("ExtGState");
-
-            if (!isDict(extGState) || !extGState.has(dictName.name)) {
-              break;
+            name = args[0].name;
+            if (name) {
+              const localGStateObj = localGStateCache.getByName(name);
+              if (localGStateObj) {
+                if (localGStateObj.length > 0) {
+                  operatorList.addOp(OPS.setGState, [localGStateObj]);
+                }
+                args = null;
+                continue;
+              }
             }
 
-            var gState = extGState.get(dictName.name);
             next(
-              self.setGState(
-                resources,
-                gState,
-                operatorList,
-                task,
-                stateManager,
-                localColorSpaceCache
-              )
+              new Promise(function (resolveGState, rejectGState) {
+                if (!name) {
+                  throw new FormatError("GState must be referred to by name.");
+                }
+
+                const extGState = resources.get("ExtGState");
+                if (!(extGState instanceof Dict)) {
+                  throw new FormatError("ExtGState should be a dictionary.");
+                }
+
+                const gState = extGState.get(name);
+                // TODO: Attempt to lookup cached GStates by reference as well,
+                //       if and only if there are PDF documents where doing so
+                //       would significantly improve performance.
+                if (!(gState instanceof Dict)) {
+                  throw new FormatError("GState should be a dictionary.");
+                }
+
+                self
+                  .setGState({
+                    resources,
+                    gState,
+                    operatorList,
+                    cacheKey: name,
+                    task,
+                    stateManager,
+                    localGStateCache,
+                    localColorSpaceCache,
+                  })
+                  .then(resolveGState, rejectGState);
+              }).catch(function (reason) {
+                if (reason instanceof AbortException) {
+                  return;
+                }
+                if (self.options.ignoreErrors) {
+                  // Error(s) in the ExtGState -- sending unsupported feature
+                  // notification and allow parsing/rendering to continue.
+                  self.handler.send("UnsupportedFeature", {
+                    featureId: UNSUPPORTED_FEATURES.errorExtGState,
+                  });
+                  warn(`getOperatorList - ignoring ExtGState: "${reason}".`);
+                  return;
+                }
+                throw reason;
+              })
             );
             return;
           case OPS.moveTo:
@@ -1791,6 +1822,7 @@ class PartialEvaluator {
     // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
     var xobjs = null;
     const emptyXObjectCache = new LocalImageCache();
+    const emptyGStateCache = new LocalGStateCache();
 
     var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
@@ -2363,25 +2395,59 @@ class PartialEvaluator {
             );
             return;
           case OPS.setGState:
-            flushTextContentItem();
-            var dictName = args[0];
-            var extGState = resources.get("ExtGState");
+            name = args[0].name;
+            if (name && emptyGStateCache.getByName(name)) {
+              break;
+            }
 
-            if (!isDict(extGState) || !isName(dictName)) {
-              break;
-            }
-            var gState = extGState.get(dictName.name);
-            if (!isDict(gState)) {
-              break;
-            }
-            var gStateFont = gState.get("Font");
-            if (gStateFont) {
-              textState.fontName = null;
-              textState.fontSize = gStateFont[1];
-              next(handleSetFont(null, gStateFont[0]));
-              return;
-            }
-            break;
+            next(
+              new Promise(function (resolveGState, rejectGState) {
+                if (!name) {
+                  throw new FormatError("GState must be referred to by name.");
+                }
+
+                const extGState = resources.get("ExtGState");
+                if (!(extGState instanceof Dict)) {
+                  throw new FormatError("ExtGState should be a dictionary.");
+                }
+
+                const gState = extGState.get(name);
+                // TODO: Attempt to lookup cached GStates by reference as well,
+                //       if and only if there are PDF documents where doing so
+                //       would significantly improve performance.
+                if (!(gState instanceof Dict)) {
+                  throw new FormatError("GState should be a dictionary.");
+                }
+
+                const gStateFont = gState.get("Font");
+                if (!gStateFont) {
+                  emptyGStateCache.set(name, gState.objId, true);
+
+                  resolveGState();
+                  return;
+                }
+                flushTextContentItem();
+
+                textState.fontName = null;
+                textState.fontSize = gStateFont[1];
+                handleSetFont(null, gStateFont[0]).then(
+                  resolveGState,
+                  rejectGState
+                );
+              }).catch(function (reason) {
+                if (reason instanceof AbortException) {
+                  return;
+                }
+                if (self.options.ignoreErrors) {
+                  // Error(s) in the ExtGState -- allow text-extraction to
+                  // continue.
+                  warn(`getTextContent - ignoring ExtGState: "${reason}".`);
+                  return;
+                }
+                throw reason;
+              })
+            );
+            return;
         } // switch
         if (textContent.items.length >= sink.desiredSize) {
           // Wait for ready, if we reach highWaterMark.
@@ -3010,9 +3076,7 @@ class PartialEvaluator {
       } else if (isRef(encoding)) {
         hash.update(encoding.toString());
       } else if (isDict(encoding)) {
-        var keys = encoding.getKeys();
-        for (var i = 0, ii = keys.length; i < ii; i++) {
-          var entry = encoding.getRaw(keys[i]);
+        for (const entry of encoding.getRawValues()) {
           if (isName(entry)) {
             hash.update(entry.name);
           } else if (isRef(entry)) {
