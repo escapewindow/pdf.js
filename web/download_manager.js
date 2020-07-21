@@ -13,64 +13,61 @@
  * limitations under the License.
  */
 
-import { createObjectURL, createValidAbsoluteUrl, PDFJS } from 'pdfjs-lib';
+import { createObjectURL, createValidAbsoluteUrl } from "pdfjs-lib";
+import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 
-if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
-  throw new Error('Module "pdfjs-web/download_manager" shall not be used ' +
-                  'outside CHROME and GENERIC builds.');
+if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("CHROME || GENERIC")) {
+  throw new Error(
+    'Module "pdfjs-web/download_manager" shall not be used ' +
+      "outside CHROME and GENERIC builds."
+  );
 }
 
+const DISABLE_CREATE_OBJECT_URL =
+  viewerCompatibilityParams.disableCreateObjectURL || false;
+
 function download(blobUrl, filename) {
-  let a = document.createElement('a');
-  if (a.click) {
-    // Use a.click() if available. Otherwise, Chrome might show
-    // "Unsafe JavaScript attempt to initiate a navigation change
-    //  for frame with URL" and not open the PDF at all.
-    // Supported by (not mentioned = untested):
-    // - Firefox 6 - 19 (4- does not support a.click, 5 ignores a.click)
-    // - Chrome 19 - 26 (18- does not support a.click)
-    // - Opera 9 - 12.15
-    // - Internet Explorer 6 - 10
-    // - Safari 6 (5.1- does not support a.click)
-    a.href = blobUrl;
-    a.target = '_parent';
-    // Use a.download if available. This increases the likelihood that
-    // the file is downloaded instead of opened by another PDF plugin.
-    if ('download' in a) {
-      a.download = filename;
-    }
-    // <a> must be in the document for IE and recent Firefox versions.
-    // (otherwise .click() is ignored)
-    (document.body || document.documentElement).appendChild(a);
-    a.click();
-    a.parentNode.removeChild(a);
-  } else {
-    if (window.top === window &&
-        blobUrl.split('#')[0] === window.location.href.split('#')[0]) {
-      // If _parent == self, then opening an identical URL with different
-      // location hash will only cause a navigation, not a download.
-      let padCharacter = blobUrl.indexOf('?') === -1 ? '?' : '&';
-      blobUrl = blobUrl.replace(/#|$/, padCharacter + '$&');
-    }
-    window.open(blobUrl, '_parent');
+  const a = document.createElement("a");
+  if (!a.click) {
+    throw new Error('DownloadManager: "a.click()" is not supported.');
   }
+  a.href = blobUrl;
+  a.target = "_parent";
+  // Use a.download if available. This increases the likelihood that
+  // the file is downloaded instead of opened by another PDF plugin.
+  if ("download" in a) {
+    a.download = filename;
+  }
+  // <a> must be in the document for IE and recent Firefox versions,
+  // otherwise .click() is ignored.
+  (document.body || document.documentElement).appendChild(a);
+  a.click();
+  a.remove();
 }
 
 class DownloadManager {
+  constructor({ disableCreateObjectURL = DISABLE_CREATE_OBJECT_URL }) {
+    this.disableCreateObjectURL = disableCreateObjectURL;
+  }
+
   downloadUrl(url, filename) {
-    if (!createValidAbsoluteUrl(url, 'http://example.com')) {
+    if (!createValidAbsoluteUrl(url, "http://example.com")) {
       return; // restricted/invalid URL
     }
-    download(url + '#pdfjs.action=download', filename);
+    download(url + "#pdfjs.action=download", filename);
   }
 
   downloadData(data, filename, contentType) {
-    if (navigator.msSaveBlob) { // IE10 and above
-      return navigator.msSaveBlob(new Blob([data], { type: contentType, }),
-                                  filename);
+    if (navigator.msSaveBlob) {
+      // IE10 and above
+      navigator.msSaveBlob(new Blob([data], { type: contentType }), filename);
+      return;
     }
-    let blobUrl = createObjectURL(data, contentType,
-                                  PDFJS.disableCreateObjectURL);
+    const blobUrl = createObjectURL(
+      data,
+      contentType,
+      this.disableCreateObjectURL
+    );
     download(blobUrl, filename);
   }
 
@@ -83,17 +80,15 @@ class DownloadManager {
       return;
     }
 
-    if (PDFJS.disableCreateObjectURL) {
+    if (this.disableCreateObjectURL) {
       // URL.createObjectURL is not supported
       this.downloadUrl(url, filename);
       return;
     }
 
-    let blobUrl = URL.createObjectURL(blob);
+    const blobUrl = URL.createObjectURL(blob);
     download(blobUrl, filename);
   }
 }
 
-export {
-  DownloadManager,
-};
+export { DownloadManager };
