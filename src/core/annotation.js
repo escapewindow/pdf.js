@@ -97,8 +97,6 @@ class AnnotationFactory {
         let fieldType = getInheritableProperty({ dict, key: "FT" });
         fieldType = isName(fieldType) ? fieldType.name : null;
 
-        let widget = new WidgetAnnotation(parameters);
-
         switch (fieldType) {
           case "Tx":
             return new TextWidgetAnnotation(parameters);
@@ -242,8 +240,8 @@ class Annotation {
     this.setFlags(dict.get("F"));
     this.setRectangle(dict.getArray("Rect"));
     this.setColor(dict.getArray("C"));
-    this.setBackgroundColor(dict.get('MK'));
-    this.setBorderColor(dict.get('MK'));
+    this.setBackgroundColor(dict.get("MK"));
+    this.setBorderColor(dict.get("MK"));
     this.setBorderStyle(dict);
     this.setAppearance(dict);
 
@@ -260,7 +258,6 @@ class Annotation {
       modificationDate: this.modificationDate,
       rect: this.rectangle,
       subtype: params.subtype,
-      rect: this.rectangle,
     };
   }
 
@@ -416,8 +413,8 @@ class Annotation {
       return;
     }
 
-    if (dict.has('BG')) {
-      this.backgroundColor = this.getColorFromArray(dict.getArray('BG'));
+    if (dict.has("BG")) {
+      this.backgroundColor = this.getColorFromArray(dict.getArray("BG"));
     }
   }
 
@@ -435,8 +432,8 @@ class Annotation {
       return;
     }
 
-    if (dict.has('BC')) {
-      this.borderColor = this.getColorFromArray(dict.getArray('BC'));
+    if (dict.has("BC")) {
+      this.borderColor = this.getColorFromArray(dict.getArray("BC"));
     }
   }
 
@@ -540,7 +537,7 @@ class Annotation {
   }
 
   getColorFromArray(color) {
-    let rgbColor = new Uint8Array(3); // Black in RGB color space (default)
+    const rgbColor = new Uint8Array(3); // Black in RGB color space (default)
     if (!Array.isArray(color)) {
       return null;
     }
@@ -948,47 +945,48 @@ class WidgetAnnotation extends Annotation {
       return Promise.resolve(this);
     }
 
-    let data = this.data;
-    let self = this;
+    const data = this.data;
+    const self = this;
 
-    let opList = new OperatorList();
-    let appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
-    let formFonts = params.pdfManager.pdfDocument.acroForm.get('DR');
+    const opList = new OperatorList();
+    const appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
+    const formFonts = params.pdfManager.pdfDocument.acroForm.get("DR");
     opList.acroForm = params.pdfManager.pdfDocument.acroForm;
-    return params.evaluator.getOperatorList({
-      stream: appearanceStream,
-      task: params.task,
-      resources: formFonts,
-      operatorList: opList,
-    }).then(() => {
-      let a = opList.argsArray;
-      let i;
-      for (i = 0; i < opList.fnArray.length; i++) {
-        let fn = opList.fnArray[i];
-        switch (fn | 0) {
-          case OPS.setFont:
-            data.annotationFonts = opList.acroForm.annotationFonts;
-            data.fontRefName = a[i][0];
-            data.fontSize = a[i][1];
-            break;
-          case OPS.setGrayFill:
-            if (a[i].length >= 1) {
-              let gray = Math.round(a[i][0] * 0x100);
-              data.fontColor = Util.makeCssRgb(gray, gray, gray);
-            }
+    return params.evaluator
+      .getOperatorList({
+        stream: appearanceStream,
+        task: params.task,
+        resources: formFonts,
+        operatorList: opList,
+      })
+      .then(() => {
+        const a = opList.argsArray;
+        for (let i = 0, ii = opList.fnArray.length; i < ii; i++) {
+          const fn = opList.fnArray[i];
+          switch (fn | 0) {
+            case OPS.setFont:
+              data.annotationFonts = opList.acroForm.annotationFonts;
+              data.fontRefName = a[i][0];
+              data.fontSize = a[i][1];
+              break;
+            case OPS.setGrayFill:
+              if (a[i].length >= 1) {
+                const gray = Math.round(a[i][0] * 0x100);
+                data.fontColor = Util.makeCssRgb(gray, gray, gray);
+              }
 
-            break;
-          case OPS.setFillRGBColor:
-            if (a[i].length >= 3) {
-              data.fontColor = Util.makeCssRgb(a[i][0], a[i][1], a[i][2]);
-            }
+              break;
+            case OPS.setFillRGBColor:
+              if (a[i].length >= 3) {
+                data.fontColor = Util.makeCssRgb(a[i][0], a[i][1], a[i][2]);
+              }
 
-            break;
+              break;
+          }
         }
-      }
 
-      return self;
-    });
+        return self;
+      });
   }
 
   getOperatorList(evaluator, task, renderForms, annotationStorage) {
@@ -1100,7 +1098,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     this.data.checkBoxType = AnnotationCheckboxType.CHECK;
-    let controlType = this._getControlType(params.dict);
+    const controlType = this._getControlType(params.dict);
     if (controlType) {
       this.data.checkBoxType = controlType;
     }
@@ -1140,7 +1138,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     this.data.radioButtonType = AnnotationCheckboxType.CIRCLE;
-    let controlType = this._getControlType(params.dict);
+    const controlType = this._getControlType(params.dict);
     if (controlType) {
       this.data.radioButtonType = controlType;
     }
@@ -1149,8 +1147,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   _processPushButton(params) {
-    if (!params.dict.has('A')) {
-      warn('Push buttons without action dictionaries are not supported');
+    if (!params.dict.has("A")) {
+      warn("Push buttons without action dictionaries are not supported");
       return;
     }
 
@@ -1180,6 +1178,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
   }
 
+  // XXX refactor to avoid inconsistent return
   _getControlType(dict) {
     const appearanceCharacteristics = dict.get("MK");
     if (!isDict(appearanceCharacteristics)) {
