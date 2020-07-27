@@ -16,8 +16,6 @@
 
 import {
   assert,
-  createPromiseCapability,
-  error,
   FormatError,
   info,
   InvalidPDFException,
@@ -25,9 +23,7 @@ import {
   isArrayEqual,
   isBool,
   isNum,
-  isSpace,
   isString,
-  MissingDataException,
   OPS,
   shadow,
   stringToBytes,
@@ -58,7 +54,6 @@ import { calculateMD5 } from "./crypto.js";
 import { Linearization } from "./parser.js";
 import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
-import { PDFFunctionFactory } from "./function.js";
 
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
@@ -394,9 +389,12 @@ class Page {
       }
       // create a blank annotation fonts array
       // if it's not initialized yet
-      if (this.pdfManager && this.pdfManager.pdfDocument &&
-          this.pdfManager.pdfDocument.acroForm &&
-          !this.pdfManager.pdfDocument.acroForm.annotationFonts) {
+      if (
+        this.pdfManager &&
+        this.pdfManager.pdfDocument &&
+        this.pdfManager.pdfDocument.acroForm &&
+        !this.pdfManager.pdfDocument.acroForm.annotationFonts
+      ) {
         this.pdfManager.pdfDocument.acroForm.annotationFonts = [];
       }
       return annotationsData;
@@ -412,13 +410,16 @@ class Page {
   }
 
   get _parsedAnnotations() {
-    var handler = {};
+    const handler = {};
 
-    var self = this;
+    const self = this;
 
     handler.send = function (actionname, data) {
-      if (self.pdfManager && self.pdfManager.pdfDocument &&
-          self.pdfManager.pdfDocument.acroForm) {
+      if (
+        self.pdfManager &&
+        self.pdfManager.pdfDocument &&
+        self.pdfManager.pdfDocument.acroForm
+      ) {
         self.pdfManager.pdfDocument.acroForm.annotationFonts.push(data);
       }
     };
@@ -434,8 +435,10 @@ class Page {
       options: this.evaluatorOptions,
     });
 
+    // XXX no AnnotationWorkerTask
     const task = new AnnotationWorkerTask(
-      "GetAnnotationAppearances: page " + this.pageIndex);
+      `GetAnnotationAppearances: page ${this.pageIndex}`
+    );
 
     const parsedAnnotations = this.pdfManager
       .ensure(this, "annotations")
@@ -449,7 +452,7 @@ class Page {
               this.pdfManager,
               this._localIdFactory,
               partialEvaluator,
-              task,
+              task
             ).catch(function (reason) {
               warn(`_parsedAnnotations: "${reason}".`);
               return null;
