@@ -432,10 +432,7 @@ class WidgetAnnotationElement extends AnnotationElement {
    */
   _setBackgroundColor(element, color) {
     if (color && color.length >= 3) {
-      let bgColor = Util.makeCssRgb(
-        color[0] | 0,
-        color[1] | 0,
-        color[2] | 0);
+      const bgColor = Util.makeCssRgb(color[0] | 0, color[1] | 0, color[2] | 0);
 
       element.style.backgroundColor = bgColor;
     }
@@ -449,7 +446,7 @@ class WidgetAnnotationElement extends AnnotationElement {
    * @returns {String}
    */
   _getDefaultFontName() {
-    return 'Helvetica, sans-serif';
+    return "Helvetica, sans-serif";
   }
 
   /**
@@ -462,9 +459,9 @@ class WidgetAnnotationElement extends AnnotationElement {
    * @returns {TextMetrics}
    */
   _measureText(text, font) {
-    let canvas = document.getElementById('page' + this.page.pageNumber);
+    const canvas = document.getElementById("page" + this.page.pageNumber);
     if (canvas) {
-      let ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       ctx.font = font;
       return ctx.measureText(text);
     }
@@ -481,14 +478,19 @@ class WidgetAnnotationElement extends AnnotationElement {
    * @memberof WidgetAnnotationElement
    */
   _processDuplicates(annotation, callback) {
-    this.layer.querySelectorAll('[annotation-name="' +
-      annotation.getAttribute('annotation-name') + '"][annotation-value="' +
-      annotation.getAttribute('annotation-value') + '"]')
-        .forEach((a) => {
-          if (a !== annotation) {
-            callback(annotation, a);
-          }
-        });
+    this.layer
+      .querySelectorAll(
+        '[annotation-name="' +
+          annotation.getAttribute("annotation-name") +
+          '"][annotation-value="' +
+          annotation.getAttribute("annotation-value") +
+          '"]'
+      )
+      .forEach(a => {
+        if (a !== annotation) {
+          callback(annotation, a);
+        }
+      });
   }
 
   /**
@@ -501,25 +503,28 @@ class WidgetAnnotationElement extends AnnotationElement {
    * @returns {String}
    */
   _calculateFontAutoSize(element, text, offset) {
-    let style = element.style;
-    let maxHeight = parseInt(element.offsetHeight);
+    const style = element.style;
+    const maxHeight = parseInt(element.offsetHeight);
     offset = offset || 0;
 
     let fSize = 2;
-    let sizeStep = 0.1;
-    for (fSize = 2; fSize < maxHeight * 0.8; fSize += sizeStep) {
-      let m = this._measureText(text,
-        (style.fontStyle ? style.fontStyle + ' ' : '') +
-        (style.fontWeight ? style.fontWeight + ' ' : '') +
-        fSize + 'px ' +
-        (this.fontFamily || this._getDefaultFontName()));
+    const sizeStep = 0.1;
+    for (let max = maxHeight * 0.8; fSize < max; fSize += sizeStep) {
+      const m = this._measureText(
+        text,
+        (style.fontStyle ? style.fontStyle + " " : "") +
+          (style.fontWeight ? style.fontWeight + " " : "") +
+          fSize +
+          "px " +
+          (this.fontFamily || this._getDefaultFontName())
+      );
 
       if (m.width + offset > parseInt(element.offsetWidth)) {
         break;
       }
     }
 
-    return (fSize - sizeStep) + 'px';
+    return fSize - sizeStep + "px";
   }
 
   /**
@@ -533,19 +538,19 @@ class WidgetAnnotationElement extends AnnotationElement {
   _getCheckBoxStyle(type) {
     switch (type) {
       case AnnotationCheckboxType.CHECK:
-        return 'check';
+        return "check";
       case AnnotationCheckboxType.CIRCLE:
-        return 'circle';
+        return "circle";
       case AnnotationCheckboxType.CROSS:
-        return 'cross';
+        return "cross";
       case AnnotationCheckboxType.DIAMOND:
-        return 'diamond';
+        return "diamond";
       case AnnotationCheckboxType.SQUARE:
-        return 'square';
+        return "square";
       case AnnotationCheckboxType.STAR:
-        return 'star';
+        return "star";
       default:
-        return '';
+        return "";
     }
   }
 
@@ -557,13 +562,13 @@ class WidgetAnnotationElement extends AnnotationElement {
    * @returns {Array}
    */
   _getCheckmarkSymbols() {
-    let checkMarkSymbols = [];
-    checkMarkSymbols[AnnotationCheckboxType.CHECK] = '✓';
-    checkMarkSymbols[AnnotationCheckboxType.CIRCLE] = '●';
-    checkMarkSymbols[AnnotationCheckboxType.CROSS] = '✕';
-    checkMarkSymbols[AnnotationCheckboxType.DIAMOND] = '◆';
-    checkMarkSymbols[AnnotationCheckboxType.SQUARE] = '■';
-    checkMarkSymbols[AnnotationCheckboxType.STAR] = '★';
+    const checkMarkSymbols = [];
+    checkMarkSymbols[AnnotationCheckboxType.CHECK] = "✓";
+    checkMarkSymbols[AnnotationCheckboxType.CIRCLE] = "●";
+    checkMarkSymbols[AnnotationCheckboxType.CROSS] = "✕";
+    checkMarkSymbols[AnnotationCheckboxType.DIAMOND] = "◆";
+    checkMarkSymbols[AnnotationCheckboxType.SQUARE] = "■";
+    checkMarkSymbols[AnnotationCheckboxType.STAR] = "★";
     return checkMarkSymbols;
   }
 }
@@ -607,8 +612,10 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.setAttribute("value", this.data.fieldValue);
       }
 
-      element.setAttribute('annotation-name',
-        encodeURIComponent(this.data.fieldName));
+      element.setAttribute(
+        "annotation-name",
+        encodeURIComponent(this.data.fieldName)
+      );
 
       element.disabled = this.data.readOnly;
       element.name = this.data.fieldName;
@@ -618,11 +625,11 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       }
 
       if (this.data.borderStyle.style === AnnotationBorderStyleType.INSET) {
-        element.className = 'inset';
+        element.className = "inset";
       }
 
       if (this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) {
-        element.className = 'beveled';
+        element.className = "beveled";
       }
 
       if (this.data.comb) {
@@ -634,10 +641,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       }
 
       if (this.data.fontRefName) {
-        let fonts = this.data.annotationFonts;
-        for (let f = 0; f < fonts.length; f++) {
-          if (fonts[f].length >= 3 &&
-              fonts[f][0] === this.data.fontRefName) {
+        const fonts = this.data.annotationFonts;
+        for (let f = 0, ff = fonts.length; f < ff; f++) {
+          if (fonts[f].length >= 3 && fonts[f][0] === this.data.fontRefName) {
             font = fonts[f][2];
             this._setTextStyle(element, font);
             break;
@@ -704,7 +710,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     const fontFamily = font.loadedName ? `"${font.loadedName}", ` : "";
     const fallbackName = font.fallbackName || "Helvetica, sans-serif";
     style.fontFamily = fontFamily + fallbackName;
-    let self = this;
+    const self = this;
 
     element.onblur = () => {
       if (!style.fontSize && !self.data.multiLine) {
@@ -718,10 +724,18 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
     // Auto size
     if (!style.fontSize && !this.data.multiLine) {
-      window.setTimeout((element, self) => {
-        element.style.fontSize =
-          self._calculateFontAutoSize(element, element.value);
-      }, 100, element, this);
+      window.setTimeout(
+        // XXX added _ to avoid shadow variables
+        (_element, _self) => {
+          _element.style.fontSize = _self._calculateFontAutoSize(
+            _element,
+            _element.value
+          );
+        },
+        100,
+        element,
+        this
+      );
 
       element.onkeypress = () => {
         style.fontSize = self._calculateFontAutoSize(element, element.value);
@@ -745,23 +759,29 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
    */
   render() {
     this.container.className = "buttonWidgetAnnotation checkBox";
+
     const element = document.createElement("input");
 
     if (!this.data.readOnly) {
       this.container.title = this.data.alternativeText;
     }
 
-    element.setAttribute('annotation-name',
-      encodeURIComponent(this.data.fieldName));
-    element.setAttribute('annotation-value',
-      this.data.buttonValue ? encodeURIComponent(this.data.buttonValue) : '');
+    element.setAttribute(
+      "annotation-name",
+      encodeURIComponent(this.data.fieldName)
+    );
+    element.setAttribute(
+      "annotation-value",
+      this.data.buttonValue ? encodeURIComponent(this.data.buttonValue) : ""
+    );
 
     if (this.data.borderStyle.style === AnnotationBorderStyleType.INSET) {
-      element.className = 'inset';
+      element.className = "inset";
     }
 
     if (this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) {
-      element.className = 'beveled';
+      element.className = "beveled";
+    }
 
     element.disabled = this.data.readOnly;
     element.type = "checkbox";
@@ -775,32 +795,37 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     // We have to create a div with checkbox symbol
     // in order to deal with background color, when
     // div with text handles onclick event.
-    let span = document.createElement('span');
+    const span = document.createElement("span");
 
-    let checkMarkSymbols = this._getCheckmarkSymbols();
+    const checkMarkSymbols = this._getCheckmarkSymbols();
 
-    span.innerHTML = element.checked ?
-      checkMarkSymbols[element.checkBoxType] : '';
+    // XXX unsanitized value
+    span.innerHTML = element.checked
+      ? checkMarkSymbols[element.checkBoxType]
+      : "";
 
-    let self = this;
+    const self = this;
 
     element.onchange = () => {
-      span.innerHTML = element.checked ?
-        checkMarkSymbols[element.checkBoxType] : '';
+      // XXX unsanitized value
+      span.innerHTML = element.checked
+        ? checkMarkSymbols[element.checkBoxType]
+        : "";
 
-        self._processDuplicates(element, (a, b) => {
-          if (b.parentElement) {
-            b.checked = a.checked;
+      self._processDuplicates(element, (a, b) => {
+        if (b.parentElement) {
+          b.checked = a.checked;
 
-            let annotationSpans =
-              b.parentElement.getElementsByTagName('span');
+          let annotationSpans = b.parentElement.getElementsByTagName("span");
 
-              if (annotationSpans.length > 0) {
-                annotationSpans[0].innerHTML = a.checked ?
-                  checkMarkSymbols[b.checkBoxType] : '';
-            }
+          if (annotationSpans.length > 0) {
+            // XXX unsanitized value
+            annotationSpans[0].innerHTML = a.checked
+              ? checkMarkSymbols[b.checkBoxType]
+              : "";
           }
-        });
+        }
+      });
     };
 
     span.onclick = () => {
@@ -810,26 +835,36 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
       }
     };
 
-    let fontSizeFactor =
-        this.data.checkBoxType === AnnotationCheckboxType.CIRCLE ||
-        this.data.checkBoxType === AnnotationCheckboxType.DIAMOND ||
-        this.data.checkBoxType === AnnotationCheckboxType.SQUARE ? 1.5 :
-        this.data.checkBoxType === AnnotationCheckboxType.STAR ? 0.5 : 1.0;
+    let fontSizeFactor;
+    switch (this.data.checkBoxType) {
+      case AnnotationCheckboxType.CIRCLE:
+      case AnnotationCheckboxType.DIAMOND:
+      case AnnotationCheckboxType.SQUARE:
+        fontSizeFactor = 1.5;
+        break;
+      case AnnotationCheckboxType.STAR:
+        fontSizeFactor = 0.5;
+        break;
+      default:
+        fontSizeFactor = 1.0;
+    }
 
-    let fontSizePadding =
-        this.data.checkBoxType !== AnnotationCheckboxType.STAR &&
-        (this.data.borderStyle.style === AnnotationBorderStyleType.INSET ||
-        this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) ?
-        4 : 0;
+    const fontSizePadding =
+      this.data.checkBoxType !== AnnotationCheckboxType.STAR &&
+      (this.data.borderStyle.style === AnnotationBorderStyleType.INSET ||
+        this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED)
+        ? 4
+        : 0;
 
     span.style.lineHeight = this.container.style.height;
 
-    span.style.fontSize = (parseFloat(this.container.style.height) *
-      fontSizeFactor - fontSizePadding) + 'px';
+    span.style.fontSize =
+      parseFloat(this.container.style.height) * fontSizeFactor -
+      fontSizePadding +
+      "px";
 
     span.style.color = this.data.fontColor;
-    this.container.className +=
-      this._getCheckBoxStyle(this.data.checkBoxType);
+    this.container.className += this._getCheckBoxStyle(this.data.checkBoxType);
 
     this._setBackgroundColor(element, this.data.backgroundColor);
 
@@ -860,10 +895,11 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     this.container.className = "buttonWidgetAnnotation radioButton";
 
     const element = document.createElement("input");
-//    element.name = encodeURIComponent(this.data.fieldName);
-//    element.setAttribute('annotation-name',
-//      encodeURIComponent(this.data.fieldName + '_' +
-//      (this.data.buttonValue || '')));
+    // XXX uncertain what to do during merge conflict
+    // element.name = encodeURIComponent(this.data.fieldName);
+    // element.setAttribute("annotation-name",
+    //  encodeURIComponent(this.data.fieldName + "_" +
+    //  (this.data.buttonValue || "")));
     element.disabled = this.data.readOnly;
     element.type = "radio";
     element.name = this.data.fieldName;
@@ -874,63 +910,81 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     element.radioButtonType = this.data.radioButtonType;
 
     if (this.data.radioButtonType === AnnotationCheckboxType.CIRCLE) {
-      element.style.width = this.container.style.width =
-        this.container.style.height;
-      this.container.borderRadius = '50%';
+      element.style.width = this.container.style.width = this.container.style.height;
+      this.container.borderRadius = "50%";
     }
 
     if (this.data.borderStyle.style === AnnotationBorderStyleType.INSET) {
-      element.className = 'inset';
+      element.className = "inset";
     }
 
     if (this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) {
-      element.className = 'beveled';
+      element.className = "beveled";
+    }
 
     this.container.appendChild(element);
 
-    let span = document.createElement('span');
+    const span = document.createElement("span");
 
-    let checkMarkSymbols = this._getCheckmarkSymbols();
+    const checkMarkSymbols = this._getCheckmarkSymbols();
 
+    // XXX unsanitized
     span.innerHTML = element.checked ?
-      checkMarkSymbols[element.radioButtonType] : '';
+      checkMarkSymbols[element.radioButtonType] : "";
 
+    // XXX unsanitized
     element.onchange = () => {
       span.innerHTML = checkMarkSymbols[element.radioButtonType];
 
-      let annotations = document.getElementsByName(element.name);
-      for (let index in annotations) {
-        if (annotations[index] !== element &&
-            annotations[index].parentElement) {
-          var annotationSpans =
-            annotations[index].parentElement.getElementsByTagName('span');
+      const annotations = document.getElementsByName(element.name);
+      for (const index in annotations) {
+        if (
+          annotations[index] !== element &&
+          annotations[index].parentElement
+        ) {
+          const annotationSpans = annotations[
+            index
+          ].parentElement.getElementsByTagName("span");
           if (annotationSpans.length > 0) {
-            annotationSpans[0].innerHTML = '';
+            annotationSpans[0].innerHTML = "";
           }
         }
       }
     };
 
-    let fontSizeFactor =
-    this.data.radioButtonType === AnnotationCheckboxType.CIRCLE ||
-    this.data.radioButtonType === AnnotationCheckboxType.DIAMOND ||
-    this.data.radioButtonType === AnnotationCheckboxType.SQUARE ? 1.5 :
-    this.data.radioButtonType === AnnotationCheckboxType.STAR ? 0.5 : 1.0;
+    // XXX share code?
+    let fontSizeFactor;
+    switch (this.data.checkBoxType) {
+      case AnnotationCheckboxType.CIRCLE:
+      case AnnotationCheckboxType.DIAMOND:
+      case AnnotationCheckboxType.SQUARE:
+        fontSizeFactor = 1.5;
+        break;
+      case AnnotationCheckboxType.STAR:
+        fontSizeFactor = 0.5;
+        break;
+      default:
+        fontSizeFactor = 1.0;
+    }
 
-    let fontSizePadding =
+    const fontSizePadding =
       this.data.radioButtonType !== AnnotationCheckboxType.STAR &&
       (this.data.borderStyle.style === AnnotationBorderStyleType.INSET ||
-      this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) ?
-      4 : 0;
+        this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED)
+        ? 4
+        : 0;
 
     span.style.lineHeight = this.container.style.height;
 
-    span.style.fontSize = (parseFloat(this.container.style.height) *
-      fontSizeFactor - fontSizePadding) + 'px';
+    span.style.fontSize =
+      parseFloat(this.container.style.height) * fontSizeFactor -
+      fontSizePadding +
+      "px";
 
     span.style.color = this.data.fontColor;
-    this.container.className +=
-      this._getCheckBoxStyle(this.data.radioButtonType);
+    this.container.className += this._getCheckBoxStyle(
+      this.data.radioButtonType
+    );
 
     this._setBackgroundColor(element, this.data.backgroundColor);
 
@@ -975,26 +1029,25 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
   render() {
     this.container.className = "choiceWidgetAnnotation";
 
-    let i, ii, style;
-    let itemName = encodeURIComponent(this.data.fieldName) + '_item';
-
-    let self = this;
+    let style;
+    const itemName = encodeURIComponent(this.data.fieldName) + "_item";
+    const self = this;
     const selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;
     selectElement.name = this.data.fieldName;
 
     if (!this.data.combo) {
-      let selectElement = document.createElement('select');
-      selectElement.setAttribute('annotation-name',
-        encodeURIComponent(this.data.fieldName));
-      selectElement.disabled = this.data.readOnly;
+      selectElement.setAttribute(
+        "annotation-name",
+        encodeURIComponent(this.data.fieldName)
+      );
 
       if (this.data.borderStyle.style === AnnotationBorderStyleType.INSET) {
-        selectElement.className = 'inset';
+        selectElement.className = "inset";
       }
 
       if (this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) {
-        selectElement.className = 'beveled';
+        selectElement.className = "beveled";
       }
 
       style = selectElement.style;
@@ -1010,16 +1063,16 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       }
 
       // Insert the options into the choice field.
-      for (i = 0, ii = this.data.options.length; i < ii; i++) {
-        let option = this.data.options[i];
+      for (let i = 0, ii = this.data.options.length; i < ii; i++) {
+        const option = this.data.options[i];
 
-        let optionElement = document.createElement('option');
+        const optionElement = document.createElement("option");
         optionElement.textContent = option.displayValue;
         optionElement.value = option.exportValue;
-        optionElement.setAttribute('name', itemName);
+        optionElement.setAttribute("name", itemName);
 
-        if (this.data.fieldValue.indexOf(option.exportValue) >= 0) {
-          optionElement.setAttribute('selected', true);
+        if (this.data.fieldValue.includes(option.exportValue)) {
+          optionElement.setAttribute("selected", true);
         }
 
         selectElement.appendChild(optionElement);
@@ -1027,7 +1080,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
       selectElement.onblur = () => {
         self._processDuplicates(selectElement, (a, b) => {
-          for (let i = 0; i < a.options.length; i++) {
+          for (let i = 0, ii = a.options.length; i < ii; i++) {
             if (i < b.options.length) {
               b.options[i].selected = a.options[i].selected;
             }
@@ -1037,27 +1090,29 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
       this.container.appendChild(selectElement);
     } else {
-      let hoverClass = 'hover';
-      let showClass = 'show';
+      const hoverClass = "hover";
+      const showClass = "show";
 
-      let comboElementDiv = document.createElement('div');
-      comboElementDiv.className = 'combo';
+      const comboElementDiv = document.createElement("div");
+      comboElementDiv.className = "combo";
       comboElementDiv.style.height = this.container.style.height;
 
-      let comboElement = document.createElement('input');
-      comboElement.type = 'text';
+      const comboElement = document.createElement("input");
+      comboElement.type = "text";
       comboElement.readOnly = !this.data.customText;
-      comboElement.setAttribute('annotation-name',
-        encodeURIComponent(this.data.fieldName));
+      comboElement.setAttribute(
+        "annotation-name",
+        encodeURIComponent(this.data.fieldName)
+      );
       comboElement.style.height = this.container.style.height;
       comboElement.style.width = this.container.style.width;
 
       if (this.data.borderStyle.style === AnnotationBorderStyleType.INSET) {
-        comboElement.className = 'inset';
+        comboElement.className = "inset";
       }
 
       if (this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) {
-        comboElement.className = 'beveled';
+        comboElement.className = "beveled";
       }
 
       style = comboElement.style;
@@ -1066,8 +1121,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
       this._setBackgroundColor(comboElement, this.data.backgroundColor);
 
-      let comboContent = document.createElement('div');
-      comboContent.className = 'combo-content';
+      const comboContent = document.createElement("div");
+      comboContent.className = "combo-content";
 
       comboContent.onmouseover = () => {
         comboElement.selected = true;
@@ -1077,28 +1132,33 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         comboElement.selected = false;
       };
 
-      comboElement.onkeypress = (event) => {
+      comboElement.onkeypress = event => {
         if ((event.keyCode ? event.keyCode : event.which) === 13) {
           comboContent.classList.remove(showClass);
           return;
         }
 
-        let filterChar = String.fromCharCode(event.charCode).toUpperCase();
+        const filterChar = String.fromCharCode(event.charCode).toUpperCase();
 
-        let items = comboContent.getElementsByTagName('a');
+        const items = comboContent.getElementsByTagName("a");
         let selectedIndex = -1;
         let firstIndex = -1;
         let lastIndex = -1;
         let newIndex = -1;
 
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].classList.contains(hoverClass) &&
-            items[i].text[0].toUpperCase() === filterChar) {
+        for (let i = 0, ii = items.length; i < ii; i++) {
+          if (
+            items[i].classList.contains(hoverClass) &&
+            items[i].text[0].toUpperCase() === filterChar
+          ) {
             selectedIndex = i;
           }
 
-          if (items[i].text && items[i].text.length > 0 &&
-            items[i].text[0].toUpperCase() === filterChar) {
+          if (
+            items[i].text &&
+            items[i].text.length > 0 &&
+            items[i].text[0].toUpperCase() === filterChar
+          ) {
             if (firstIndex < 0) {
               firstIndex = i;
             }
@@ -1109,10 +1169,13 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           items[i].classList.remove(hoverClass);
         }
 
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].text && items[i].text.length > 0 &&
+        for (let i = 0, ii = items.length; i < ii; i++) {
+          if (
+            items[i].text &&
+            items[i].text.length > 0 &&
             items[i].text[0].toUpperCase() === filterChar &&
-            i > selectedIndex) {
+            i > selectedIndex
+          ) {
             newIndex = i;
             break;
           }
@@ -1133,12 +1196,12 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           selectedItem.classList.add(hoverClass);
           comboElement.value = selectedItem.text;
 
-          let hRatio = comboContent.clientHeight / comboContent.scrollHeight;
-          let pRatio = (selectedItemIndex + 1) / items.length;
+          const hRatio = comboContent.clientHeight / comboContent.scrollHeight;
+          const pRatio = (selectedItemIndex + 1) / items.length;
 
           if (hRatio <= pRatio) {
-            comboContent.scrollTop = selectedItemIndex / items.length *
-              comboContent.scrollHeight;
+            comboContent.scrollTop =
+              (selectedItemIndex / items.length) * comboContent.scrollHeight;
           } else {
             comboContent.scrollTop = 0;
           }
@@ -1146,7 +1209,10 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           // Auto size
           if (comboElement.autoSize) {
             style.fontSize = self._calculateFontAutoSize(
-              comboElement, selectedItem.text, downArrowWidth);
+              comboElement,
+              selectedItem.text,
+              downArrowWidth
+            );
           }
         }
       };
@@ -1154,8 +1220,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       comboElement.onblur = () => {
         if (!comboElement.selected) {
           comboContent.classList.remove(showClass);
-          self.container.style.position = '';
-          self.container.style.zIndex = '';
+          self.container.style.position = "";
+          self.container.style.zIndex = "";
         }
 
         self._processDuplicates(comboElement, (a, b) => {
@@ -1163,49 +1229,56 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         });
       };
 
-      let spanElement = document.createElement('span');
+      const spanElement = document.createElement("span");
       spanElement.onclick = () => {
         if (!comboElement.disabled) {
           comboElement.focus();
           comboContent.classList.toggle(showClass);
-          self.container.style.position = 'absolute';
-          self.container.style.zIndex = '100';
+          self.container.style.position = "absolute";
+          self.container.style.zIndex = "100";
         }
       };
 
       let comboWidth = parseFloat(self.container.style.width);
       let increaseComboWidth = false;
 
-      let aElementPadding = 2;
-      let downArrowWidth = self._measureText('▼',
-      ('8pt ' + self._getDefaultFontName())).width;
+      const aElementPadding = 2;
+      const downArrowWidth = self._measureText(
+        "▼",
+        "8pt " + self._getDefaultFontName()
+      ).width;
 
-      for (i = 0, ii = this.data.options.length; i < ii; i++) {
-        let optionItem = this.data.options[i];
+      for (let i = 0, ii = this.data.options.length; i < ii; i++) {
+        const optionItem = this.data.options[i];
 
-        let aElement = document.createElement('a');
-        aElement.setAttribute('value', optionItem.exportValue);
+        const aElement = document.createElement("a");
+        aElement.setAttribute("value", optionItem.exportValue);
         aElement.text = optionItem.displayValue;
         aElement.name = itemName;
-        aElement.style.padding = aElementPadding + 'px';
+        aElement.style.padding = aElementPadding + "px";
         if (!style.fontSize) {
-          aElement.style.fontSize = '9px';
+          aElement.style.fontSize = "9px";
         } else {
           aElement.style.fontSize = style.fontSize;
         }
 
-        if (this.data.fieldValue.indexOf(optionItem.exportValue) >= 0) {
+        if (this.data.fieldValue.includes(optionItem.exportValue)) {
           comboElement.value = optionItem.displayValue;
         }
 
-        let aElementWidth = self._measureText(aElement.text,
-          (style.fontStyle ? style.fontStyle + ' ' : '') +
-          (style.fontWeight ? style.fontWeight + ' ' : '') +
-          (style.fontSize ? style.fontSize : '9') + 'px ' +
-          (style.fontFamily || self._getDefaultFontName()));
+        const aElementWidth = self._measureText(
+          aElement.text,
+          (style.fontStyle ? style.fontStyle + " " : "") +
+            (style.fontWeight ? style.fontWeight + " " : "") +
+            (style.fontSize ? style.fontSize : "9") +
+            "px " +
+            (style.fontFamily || self._getDefaultFontName())
+        );
 
-        if (aElementWidth.width + downArrowWidth +
-          aElementPadding * 2 > comboWidth) {
+        if (
+          aElementWidth.width + downArrowWidth + aElementPadding * 2 >
+          comboWidth
+        ) {
           comboWidth = aElementWidth.width;
           increaseComboWidth = true;
         }
@@ -1213,21 +1286,24 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         aElement.onclick = () => {
           comboElement.value = aElement.text;
           comboContent.classList.remove(showClass);
-          self.container.style.position = '';
-          self.container.style.zIndex = '';
+          self.container.style.position = "";
+          self.container.style.zIndex = "";
 
           // Auto size
           if (comboElement.autoSize) {
             style.fontSize = self._calculateFontAutoSize(
-              comboElement, aElement.text, downArrowWidth);
+              comboElement,
+              aElement.text,
+              downArrowWidth
+            );
           }
         };
 
         aElement.onmouseover = () => {
-          let items = comboContent.getElementsByTagName('a');
+          const items = comboContent.getElementsByTagName("a");
 
-          for (let i = 0; i < items.length; i++) {
-            items[i].classList.remove(hoverClass);
+          for (let j = 0, jj = items.length; j < jj; j++) {
+            items[j].classList.remove(hoverClass);
           }
 
           aElement.classList.add(hoverClass);
@@ -1241,18 +1317,26 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       }
 
       if (increaseComboWidth) {
-        comboContent.style.width = (comboWidth + downArrowWidth +
-          aElementPadding * 2) + 'px';
+        comboContent.style.width =
+          comboWidth + downArrowWidth + aElementPadding * 2 + "px";
       }
 
       if (!style.fontSize) {
         comboElement.autoSize = true;
 
-        window.setTimeout(function(element, self, downArrowWidth) {
-          element.style.fontSize =
-            self._calculateFontAutoSize(element, element.value,
-              downArrowWidth);
-        }, 100, comboElement, this, downArrowWidth);
+        window.setTimeout(
+          function (element, _self, _downArrowWidth) {
+            element.style.fontSize = _self._calculateFontAutoSize(
+              element,
+              element.value,
+              _downArrowWidth
+            );
+          },
+          100,
+          comboElement,
+          this,
+          downArrowWidth
+        );
       }
 
       comboElementDiv.appendChild(comboElement);
@@ -1268,12 +1352,13 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     let styleExpression = "";
 
     if (this.data.backgroundColor) {
-      let bgColor = Util.makeCssRgb(
+      const bgColor = Util.makeCssRgb(
         this.data.backgroundColor[0] | 0,
         this.data.backgroundColor[1] | 0,
-        this.data.backgroundColor[2] | 0);
+        this.data.backgroundColor[2] | 0
+      );
 
-      styleExpression = 'background-color:' + bgColor + ';';
+      styleExpression = `background-color:${bgColor};`;
     }
     // Insert the options into the choice field.
     for (const option of this.data.options) {
@@ -1287,16 +1372,17 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     }
 
     styleExpression +=
-      (style.color ? 'color:' + style.color + ';' : '') +
-      (style.fontSize ? 'font-size:' + style.fontSize + ';' : '') +
-      (style.fontWeight ? 'font-weight:' + style.fontWeight + ';' : '') +
-      (style.fontStyle ? 'font-style:' + style.fontStyle + ';' : '') +
-      (style.fontFamily ? 'font-family:' + style.fontFamily + ';' : '');
+      (style.color ? "color:" + style.color + ";" : "") +
+      (style.fontSize ? "font-size:" + style.fontSize + ";" : "") +
+      (style.fontWeight ? "font-weight:" + style.fontWeight + ";" : "") +
+      (style.fontStyle ? "font-style:" + style.fontStyle + ";" : "") +
+      (style.fontFamily ? "font-family:" + style.fontFamily + ";" : "");
 
-    let cssClass = document.createElement('style');
+    const cssClass = document.createElement("style");
+    // XXX unsanitized
     cssClass.innerHTML =
-      '.' + this.layer.className + ' .' + this.container.className +
-      ' [name="' + itemName + '"]{' + styleExpression + '}';
+      `.${this.layer.className} .${this.container.className} ` +
+      ` [name="${itemName}"]{${styleExpression}}`;
 
     document.body.appendChild(cssClass);
 
@@ -1311,28 +1397,28 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
    * @memberof ChoiceWidgetAnnotationElement
    */
   _setElementFont(element) {
-    let style = element.style;
+    const style = element.style;
 
     if (this.data.fontColor) {
       style.color = this.data.fontColor;
     }
 
     if (this.data.fontSize) {
-      style.fontSize = this.data.fontSize + 'px';
+      style.fontSize = this.data.fontSize + "px";
     }
 
     if (this.data.fontRefName) {
-      let fonts = this.data.annotationFonts;
+      const fonts = this.data.annotationFonts;
       for (let f = 0; f < fonts.length; f++) {
         if (fonts[f].length >= 3 && fonts[f][0] === this.data.fontRefName) {
-          let font = fonts[f][2];
+          const font = fonts[f][2];
 
-          style.fontWeight = font.black ? font.bold ? '900' :
-                               'bold' : font.bold ? 'bold' : 'normal';
-          style.fontStyle = font.italic ? 'italic' : 'normal';
-          let fontFamily = font.loadedName ? '"' +
-                             font.loadedName + '", ' : '';
-          let fallbackName = font.fallbackName || this._getDefaultFontName();
+          // XXX no nested ternaries
+          style.fontWeight = font.black ? font.bold ? "900" :
+              "bold" : font.bold ? "bold" : "normal";
+          style.fontStyle = font.italic ? "italic" : "normal";
+          const fontFamily = font.loadedName ? `"${font.loadedName}", ` : "";
+          const fallbackName = font.fallbackName || this._getDefaultFontName();
           style.fontFamily = fontFamily + fallbackName;
           break;
         }
