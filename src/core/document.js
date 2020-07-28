@@ -435,10 +435,8 @@ class Page {
       options: this.evaluatorOptions,
     });
 
-    // XXX no AnnotationWorkerTask
-    const task = new AnnotationWorkerTask(
-      `GetAnnotationAppearances: page ${this.pageIndex}`
-    );
+    // XXX figure out how to replace AnnotationWorkerTask
+    let task;
 
     const parsedAnnotations = this.pdfManager
       .ensure(this, "annotations")
@@ -446,6 +444,7 @@ class Page {
         const annotationPromises = [];
         for (const annotationRef of this.annotations) {
           annotationPromises.push(
+            // aki
             AnnotationFactory.create(
               this.xref,
               annotationRef,
