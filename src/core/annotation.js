@@ -50,20 +50,23 @@ class AnnotationFactory {
    */
   static create(xref, ref, pdfManager, idFactory) {
     return pdfManager.ensureDoc("acroForm").then(acroForm => {
-      return pdfManager.ensure(this, "_create", [
-        xref,
-        ref,
-        pdfManager,
-        idFactory,
-        acroForm,
-      ]);
+      return pdfManager.ensureDoc("defaultResources").then(defaultResources => {
+        return pdfManager.ensure(this, "_create", [
+          xref,
+          ref,
+          pdfManager,
+          idFactory,
+          acroForm,
+          defaultResources,
+        ]);
+      });
     });
   }
 
   /**
    * @private
    */
-  static _create(xref, ref, pdfManager, idFactory, acroForm) {
+  static _create(xref, ref, pdfManager, idFactory, acroForm, defaultResources) {
     const dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return undefined;
@@ -82,6 +85,8 @@ class AnnotationFactory {
       id,
       pdfManager,
       acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
+      defaultResources:
+        defaultResources instanceof Dict ? defaultResources : Dict.empty,
     };
 
     switch (subtype) {
@@ -233,6 +238,7 @@ class Annotation {
   constructor(params) {
     const dict = params.dict;
 
+    this.defaultResources = dict.defaultResources;
     this.setContents(dict.get("Contents"));
     this.setModificationDate(dict.get("M"));
     this.setFlags(dict.get("F"));
@@ -807,9 +813,7 @@ class WidgetAnnotation extends Annotation {
     const fieldType = getInheritableProperty({ dict, key: "FT" });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
     this.fieldResources =
-      getInheritableProperty({ dict, key: "DR" }) ||
-      params.acroForm.get("DR") ||
-      Dict.empty;
+      getInheritableProperty({ dict, key: "DR" }) || params.defaultResources;
 
     data.fieldFlags = getInheritableProperty({ dict, key: "Ff" });
     if (!Number.isInteger(data.fieldFlags) || data.fieldFlags < 0) {
