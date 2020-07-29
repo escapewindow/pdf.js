@@ -844,6 +844,21 @@ class PDFDocument {
     }));
   }
 
+  get defaultResources() {
+    const resources = this.acroForm.get("DR") || Dict.empty;
+    const keys = [
+      "ExtGState",
+      "ColorSpace",
+      "Pattern",
+      "Shading",
+      "XObject",
+      "Font",
+    ];
+    return new ObjectLoader(resources, keys, this.xref).load().then(() => {
+      return shadow(this, "defaultResources", resources);
+    });
+  }
+
   checkFirstPage() {
     return this.getPage(0).catch(async reason => {
       if (reason instanceof XRefEntryException) {

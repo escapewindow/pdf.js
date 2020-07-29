@@ -54,13 +54,14 @@ class AnnotationFactory {
       ref,
       pdfManager,
       idFactory,
+      defaultResources,
     ]);
   }
 
   /**
    * @private
    */
-  static _create(xref, ref, pdfManager, idFactory) {
+  static _create(xref, ref, pdfManager, idFactory, defaultResources) {
     const dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return undefined;
@@ -78,6 +79,8 @@ class AnnotationFactory {
       subtype,
       id,
       pdfManager,
+      defaultResources:
+        defaultResources instanceof Dict ? defaultResources : Dict.empty,
     };
 
     switch (subtype) {
@@ -229,6 +232,7 @@ class Annotation {
   constructor(params) {
     const dict = params.dict;
 
+    this.defaultResources = dict.defaultResources;
     this.setContents(dict.get("Contents"));
     this.setModificationDate(dict.get("M"));
     this.setFlags(dict.get("F"));
