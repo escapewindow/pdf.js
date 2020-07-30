@@ -854,7 +854,8 @@ class PDFDocument {
       "XObject",
       "Font",
     ];
-    // XXX I probably want a helper function ?
+    // XXX Guessing this is broken because I should be using the page xref?
+    // XXX may need to revisit the `annotationFonts` approach
     return new ObjectLoader(resources, keys, this.xref).load().then(() => {
       return shadow(this, "defaultResources", resources);
     });
