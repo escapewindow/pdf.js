@@ -49,13 +49,15 @@ class AnnotationFactory {
    *   instance.
    */
   static create(xref, ref, pdfManager, idFactory) {
-    return pdfManager.ensure(this, "_create", [
-      xref,
-      ref,
-      pdfManager,
-      idFactory,
-      defaultResources,
-    ]);
+    return pdfManager.ensureDoc("defaultResources").then(defaultResources => {
+      return pdfManager.ensure(this, "_create", [
+        xref,
+        ref,
+        pdfManager,
+        idFactory,
+        defaultResources,
+      ]);
+    });
   }
 
   /**

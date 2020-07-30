@@ -180,7 +180,6 @@ class WorkerMessageHandler {
       await pdfManager.ensureDoc("checkHeader");
       await pdfManager.ensureDoc("parseStartXRef");
       await pdfManager.ensureDoc("parse", [recoveryMode]);
-      await pdfManager.ensureDoc("defaultResources");
 
       if (!recoveryMode) {
         // Check that at least the first page can be successfully loaded,
