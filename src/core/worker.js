@@ -178,6 +178,7 @@ class WorkerMessageHandler {
 
     async function loadDocument(recoveryMode) {
       await pdfManager.ensureDoc("checkHeader");
+      await pdfManager.ensureDoc("loadDefaultResources");
       await pdfManager.ensureDoc("parseStartXRef");
       await pdfManager.ensureDoc("parse", [recoveryMode]);
 

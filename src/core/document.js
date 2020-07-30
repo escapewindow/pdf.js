@@ -551,6 +551,8 @@ class PDFDocument {
         if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
           this.acroForm = null; // No fields and no XFA, so it's not a form.
         }
+        this.da = this.acroForm.get("DA") || "";
+        this.dr = this.acroForm.get("DR") || Dict.empty;
       }
     } catch (ex) {
       if (ex instanceof MissingDataException) {
@@ -844,8 +846,9 @@ class PDFDocument {
     }));
   }
 
-  get defaultResources() {
-    const resources = this.acroForm.get("DR") || Dict.empty;
+  loadDefaultResources() {
+    const stream = new Stream(this.DR);
+    const xref = new XRef(stream, this.pdfManager);
     const keys = [
       "ExtGState",
       "ColorSpace",
@@ -854,10 +857,8 @@ class PDFDocument {
       "XObject",
       "Font",
     ];
-    // XXX I probably want a helper function ?
-    return new ObjectLoader(resources, keys, this.xref).load().then(() => {
-      return shadow(this, "defaultResources", resources);
-    });
+    const objectLoader = new ObjectLoader(this.DR, keys, xref);
+    return objectLoader.load();
   }
 
   checkFirstPage() {
