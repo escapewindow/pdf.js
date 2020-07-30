@@ -854,6 +854,7 @@ class PDFDocument {
       "XObject",
       "Font",
     ];
+    // XXX I probably want a helper function ?
     return new ObjectLoader(resources, keys, this.xref).load().then(() => {
       return shadow(this, "defaultResources", resources);
     });
