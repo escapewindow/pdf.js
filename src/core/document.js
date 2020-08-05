@@ -686,6 +686,8 @@ class PDFDocument {
     const opList = new OperatorList(null, null);
     const defaultResources = this.acroForm.get("DR") || Dict.empty;
     const appearanceStream = new Stream(stringToBytes(defaultAppearance));
+    // XXX do we want to parse the DA string or DR dict?
+    // const appearanceStream = new Stream(defaultResources);
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
       // XXX how to get handler
