@@ -756,6 +756,7 @@ class PDFDocument {
       "this.acroForm.annotationFonts: " +
         JSON.stringify(this.acroForm.annotationFonts)
     );
+    // XXX return the string, the data dict, or the operator list ?
     return shadow(this, "defaultAppearance", defaultAppearance);
   }
 
