@@ -547,6 +547,7 @@ class PDFDocument {
       this.acroForm = this.catalog.catDict.get("AcroForm");
       if (this.acroForm) {
         this.xfa = this.acroForm.get("XFA");
+        this.acroForm.annotationFonts = [];
         const fields = this.acroForm.get("Fields");
         if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
           this.acroForm = null; // No fields and no XFA, so it's not a form.

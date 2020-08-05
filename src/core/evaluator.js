@@ -2585,6 +2585,7 @@ class PartialEvaluator {
     task,
     resources,
     operatorList,
+    acroForm,
     initialState = null,
   }) {
     resources = resources || Dict.empty;
@@ -2621,7 +2622,6 @@ class PartialEvaluator {
       };
       task.ensureNotTerminated();
       timeSlotManager.reset();
-      // XXX get the contents of `data` back to the caller -- pass in?
       var stop,
         operation = {},
         data = {};
@@ -2643,11 +2643,12 @@ class PartialEvaluator {
             var fontName = args[0].name;
             // XXX maybe just loadFont instead of handleSetFont?
             next(self.loadFont(fontName, null, resources));
-            data.annotationFonts = operatorList.acroForm.annotationFonts;
+            data.annotationFonts = acroForm.annotationFonts.slice();
             data.fontRefName = args[0];
             data.fontSize = args[1];
             break;
           case OPS.setGrayFill:
+            args = args.slice();
             if (args.length < 1) {
               warn("Incorrect annotation gray color length");
             } else {
@@ -2656,12 +2657,16 @@ class PartialEvaluator {
             }
             break;
           case OPS.setFillRGBColor:
+            args = args.slice();
             if (args.length < 3) {
               warn("Incorrect annotation RGB color length");
             } else {
               data.fontColor = Util.makeCssRgb(args[0], args[1], args[2]);
             }
             break;
+        }
+        if (data) {
+          acroForm.annotationFonts.push(data);
         }
         operatorList.addOp(fn, args);
       }
