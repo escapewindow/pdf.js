@@ -2642,7 +2642,15 @@ class PartialEvaluator {
             args = args.slice();
             var fontName = args[0].name;
             // XXX maybe just loadFont instead of handleSetFont?
-            next(self.loadFont(fontName, null, resources));
+            next(
+              self.loadFont(fontName, null, resources).resolve()
+              // XXX if we want the translated font
+              // .then(function (translated) {
+              //   textState.font = translated.font;
+              //   textState.fontMatrix =
+              //    translated.font.fontMatrix || FONT_IDENTITY_MATRIX;
+              //  })
+            );
             data.annotationFonts = acroForm.annotationFonts.slice();
             data.fontRefName = args[0];
             data.fontSize = args[1];
