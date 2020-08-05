@@ -976,7 +976,7 @@ class PartialEvaluator {
     }
 
     // XXX debug
-    console.log(`Loading font ${fontName}`);
+    // console.log(`Loading font ${fontName}`);
     font = xref.fetchIfRef(fontRef);
     if (!isDict(font)) {
       return errorFont();
