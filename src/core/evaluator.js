@@ -2620,7 +2620,8 @@ class PartialEvaluator {
           }
         }, reject);
       };
-      task.ensureNotTerminated();
+      // XXX do we need `task` set ?
+      // task.ensureNotTerminated();
       timeSlotManager.reset();
       var stop,
         operation = {},
@@ -2674,6 +2675,7 @@ class PartialEvaluator {
             break;
         }
         if (data) {
+          // XXX should I add this to annotationFonts or defaultResources?
           acroForm.annotationFonts.push(data);
         }
         operatorList.addOp(fn, args);
@@ -2691,11 +2693,13 @@ class PartialEvaluator {
       if (this.options.ignoreErrors) {
         // Error(s) in the OperatorList -- sending unsupported feature
         // notification and allow rendering to continue.
-        this.handler.send("UnsupportedFeature", {
-          featureId: UNSUPPORTED_FEATURES.errorOperatorList,
-        });
+        // XXX we may not have `handler` set
+        // this.handler.send("UnsupportedFeature", {
+        //   featureId: UNSUPPORTED_FEATURES.errorOperatorList,
+        // });
+        // XXX we may not have `task` set
         warn(
-          `getOperatorList - ignoring errors during "${task.name}" ` +
+          `getOperatorList - ignoring errors during ` +  // "${task.name}" ` +
             `task: "${reason}".`
         );
 

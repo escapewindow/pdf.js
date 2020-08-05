@@ -720,7 +720,31 @@ class PDFDocument {
       return shadow(this, "defaultAppearance", null);
     }
     const defaultAppearance = this.acroForm.get("DA") || "";
-    // XXX parse
+    const opList = new OperatorList(null, null);
+    const defaultResources = this.acroForm.get("DR") || Dict.empty;
+    const appearanceStream = new Stream(stringToBytes(defaultAppearance));
+    const partialEvaluator = new PartialEvaluator({
+      xref: this.xref,
+      // XXX how to get handler
+      // handler,
+      handler: null,
+      pageIndex: this.pageIndex,
+      idFactory: this._localIdFactory,
+      fontCache: this.fontCache,
+      builtInCMapCache: this.builtInCMapCache,
+      globalImageCache: this.globalImageCache,
+      options: this.evaluatorOptions,
+    });
+    // XXX aki
+    partialEvaluator
+      .getAcroformDefaultOperatorList({
+        stream: appearanceStream,
+        task: null,
+        resources: defaultResources,
+        operatorList: opList,
+        acroForm: this.acroForm,
+      })
+      .resolve();
     return shadow(this, "defaultAppearance", defaultAppearance);
   }
 
