@@ -2644,7 +2644,7 @@ class PartialEvaluator {
             var fontName = args[0].name;
             // XXX maybe just loadFont instead of handleSetFont?
             next(
-              self.loadFont(fontName, null, resources).resolve()
+              self.loadFont(fontName, null, resources)
               // XXX if we want the translated font
               // .then(function (translated) {
               //   textState.font = translated.font;
@@ -2653,7 +2653,7 @@ class PartialEvaluator {
               //  })
             );
             data.annotationFonts = acroForm.annotationFonts.slice();
-            data.fontRefName = args[0];
+            data.fontRefName = args[0].name;
             data.fontSize = args[1];
             break;
           case OPS.setGrayFill:
