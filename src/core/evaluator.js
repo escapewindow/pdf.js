@@ -2580,6 +2580,118 @@ class PartialEvaluator {
     });
   }
 
+  getAcroformDefaultOperatorList({
+    stream,
+    task,
+    resources,
+    operatorList,
+    initialState = null,
+  }) {
+    resources = resources || Dict.empty;
+    initialState = initialState || new EvalState();
+
+    if (!operatorList) {
+      throw new Error(
+        'getAcroformDefaultOperatorList: missing "operatorList" parameter'
+      );
+    }
+
+    var self = this;
+    var xref = this.xref;
+
+    var stateManager = new StateManager(initialState);
+    var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
+    var timeSlotManager = new TimeSlotManager();
+
+    function closePendingRestoreOPS(argument) {
+      for (var i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
+        operatorList.addOp(OPS.restore, []);
+      }
+    }
+
+    return new Promise(function promiseBody(resolve, reject) {
+      const next = function (promise) {
+        Promise.all([promise, operatorList.ready]).then(function () {
+          try {
+            promiseBody(resolve, reject);
+          } catch (ex) {
+            reject(ex);
+          }
+        }, reject);
+      };
+      task.ensureNotTerminated();
+      timeSlotManager.reset();
+      var stop,
+        operation = {},
+        data = {};
+      while (!(stop = timeSlotManager.check())) {
+        // The arguments parsed by read() are used beyond this loop, so we
+        // cannot reuse the same array on each iteration. Therefore we pass
+        // in |null| as the initial value (see the comment on
+        // EvaluatorPreprocessor_read() for why).
+        operation.args = null;
+        if (!preprocessor.read(operation)) {
+          break;
+        }
+        var args = operation.args;
+        var fn = operation.fn;
+
+        switch (fn | 0) {
+          case OPS.setFont:
+            args = args.slice();
+            var fontName = args[0].name;
+            // XXX maybe just loadFont instead of handleSetFont?
+            next(self.loadFont(fontName, null, resources));
+            data.annotationFonts = operatorList.acroForm.annotationFonts;
+            data.fontRefName = args[0];
+            data.fontSize = args[1];
+            break;
+          case OPS.setGrayFill:
+            if (args.length < 1) {
+              warn("Incorrect annotation gray color length");
+            } else {
+              const gray = Math.round(args[0] * 0x100);
+              data.fontColor = Util.makeCssRgb(gray, gray, gray);
+            }
+            break;
+          case OPS.setFillRGBColor:
+            if (args.length < 3) {
+              warn("Incorrect annotation RGB color length");
+            } else {
+              data.fontColor = Util.makeCssRgb(args[0], args[1], args[2]);
+            }
+            break;
+        }
+        operatorList.addOp(fn, args);
+      }
+      if (stop) {
+        next(deferred);
+        return;
+      }
+      closePendingRestoreOPS();
+      resolve();
+    }).catch(reason => {
+      if (reason instanceof AbortException) {
+        return;
+      }
+      if (this.options.ignoreErrors) {
+        // Error(s) in the OperatorList -- sending unsupported feature
+        // notification and allow rendering to continue.
+        this.handler.send("UnsupportedFeature", {
+          featureId: UNSUPPORTED_FEATURES.errorOperatorList,
+        });
+        warn(
+          `getOperatorList - ignoring errors during "${task.name}" ` +
+            `task: "${reason}".`
+        );
+
+        closePendingRestoreOPS();
+        return;
+      }
+      throw reason;
+    });
+  }
+
   extractDataStructures(dict, baseDict, properties) {
     const xref = this.xref;
     let cidToGidBytes;
