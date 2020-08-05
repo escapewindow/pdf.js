@@ -691,12 +691,16 @@ class PDFDocument {
       // XXX how to get handler
       // handler,
       handler: null,
-      pageIndex: this.pageIndex,
-      idFactory: this._localIdFactory,
-      fontCache: this.fontCache,
-      builtInCMapCache: this.builtInCMapCache,
-      globalImageCache: this.globalImageCache,
-      options: this.evaluatorOptions,
+      // pageIndex: this.pageIndex,
+      pageIndex: null,
+      // idFactory: this._localIdFactory,
+      // globalIdFactory ?
+      idFactory: null,
+      fontCache: this.catalog.fontCache,
+      builtInCMapCache: this.catalog.builtInCMapCache,
+      globalImageCache: this.catalog.globalImageCache,
+      // options: this.evaluatorOptions,
+      options: this.pdfManager.evaluatorOptions,
     });
     // XXX aki
     partialEvaluator
