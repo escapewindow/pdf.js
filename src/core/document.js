@@ -716,7 +716,7 @@ class PDFDocument {
   }
 
   get defaultAppearance() {
-    if (this.acroForm) {
+    if (!this.acroForm) {
       return shadow(this, "defaultAppearance", null);
     }
     const defaultAppearance = this.acroForm.get("DA") || "";
@@ -739,6 +739,10 @@ class PDFDocument {
       // options: this.evaluatorOptions,
       options: this.pdfManager.evaluatorOptions,
     });
+    // XXX debug
+    console.log(
+      `this.acroForm.annotationFonts ${this.acroForm.annotationFonts}`
+    );
     // XXX aki
     partialEvaluator
       .getAcroformDefaultOperatorList({
@@ -749,6 +753,11 @@ class PDFDocument {
         acroForm: this.acroForm,
       })
       .resolve();
+    // XXX debug
+    console.log(`defaultAppearance ${defaultAppearance}`);
+    console.log(
+      `this.acroForm.annotationFonts ${this.acroForm.annotationFonts}`
+    );
     return shadow(this, "defaultAppearance", defaultAppearance);
   }
 
