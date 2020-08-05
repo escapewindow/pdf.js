@@ -2621,6 +2621,7 @@ class PartialEvaluator {
       };
       task.ensureNotTerminated();
       timeSlotManager.reset();
+      // XXX get the contents of `data` back to the caller -- pass in?
       var stop,
         operation = {},
         data = {};
