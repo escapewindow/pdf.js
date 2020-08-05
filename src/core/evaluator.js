@@ -1056,6 +1056,7 @@ class PartialEvaluator {
     // Keep track of each font we translated so the caller can
     // load them asynchronously before calling display on a page.
     font.loadedName = `${this.idFactory.getDocId()}_${fontID}`;
+    console.log(`loadedName ${font.loadedName}`);
 
     font.translated = fontCapability.promise;
 
@@ -2608,6 +2609,7 @@ class PartialEvaluator {
     var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
     var timeSlotManager = new TimeSlotManager();
 
+    // XXX needed?
     function closePendingRestoreOPS(argument) {
       for (var i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
         operatorList.addOp(OPS.restore, []);
