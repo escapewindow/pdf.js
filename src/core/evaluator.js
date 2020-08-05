@@ -971,12 +971,12 @@ class PartialEvaluator {
 
     if (this.fontCache.has(fontRef)) {
       // XXX debug
-      console.log(`Font ${fontName} is in the cache`);
+      // console.log(`Font ${fontName} is in the cache`);
       return this.fontCache.get(fontRef);
     }
 
     // XXX debug
-    // console.log(`Loading font ${fontName}`);
+    console.log(`Loading font ${fontName}`);
     font = xref.fetchIfRef(fontRef);
     if (!isDict(font)) {
       return errorFont();
