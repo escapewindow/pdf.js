@@ -50,13 +50,17 @@ class AnnotationFactory {
    */
   static create(xref, ref, pdfManager, idFactory) {
     return pdfManager.ensureDoc("acroForm").then(acroForm => {
-      return pdfManager.ensure(this, "_create", [
-        xref,
-        ref,
-        pdfManager,
-        idFactory,
-        acroForm,
-      ]);
+      return pdfManager
+        .ensureDoc("defaultAppearance")
+        .then(defaultAppearance => {
+          return pdfManager.ensure(this, "_create", [
+            xref,
+            ref,
+            pdfManager,
+            idFactory,
+            acroForm,
+          ]);
+        });
     });
   }
 
