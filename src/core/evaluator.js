@@ -2646,6 +2646,7 @@ class PartialEvaluator {
 
         // XXX poppler also calls `PSOutputDev::setupImages` and
         // `PSOutputDev::setupForms` here.
+        // We're also only parsing DA, not DR; we're missing a lot.
         switch (fn | 0) {
           case OPS.setFont:
             args = args.slice();
