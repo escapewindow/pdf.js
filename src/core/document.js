@@ -731,8 +731,7 @@ class PDFDocument {
       // pageIndex: this.pageIndex,
       pageIndex: null,
       // idFactory: this._localIdFactory,
-      // globalIdFactory ?
-      idFactory: null,
+      idFactory: this._globalIdFactory,
       fontCache: this.catalog.fontCache,
       builtInCMapCache: this.catalog.builtInCMapCache,
       globalImageCache: this.catalog.globalImageCache,
@@ -744,19 +743,18 @@ class PDFDocument {
       `this.acroForm.annotationFonts ${this.acroForm.annotationFonts}`
     );
     // XXX aki
-    partialEvaluator
-      .getAcroformDefaultOperatorList({
-        stream: appearanceStream,
-        task: null,
-        resources: defaultResources,
-        operatorList: opList,
-        acroForm: this.acroForm,
-      })
-      .resolve();
+    partialEvaluator.getAcroformDefaultOperatorList({
+      stream: appearanceStream,
+      task: null,
+      resources: defaultResources,
+      operatorList: opList,
+      acroForm: this.acroForm,
+    });
     // XXX debug
     console.log(`defaultAppearance ${defaultAppearance}`);
     console.log(
-      `this.acroForm.annotationFonts ${this.acroForm.annotationFonts}`
+      "this.acroForm.annotationFonts: " +
+        JSON.stringify(this.acroForm.annotationFonts)
     );
     return shadow(this, "defaultAppearance", defaultAppearance);
   }
