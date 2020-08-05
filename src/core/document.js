@@ -678,6 +678,15 @@ class PDFDocument {
     return shadow(this, "numPages", num);
   }
 
+  get defaultAppearance() {
+    if (this.acroForm) {
+      return shadow(this, "defaultAppearance", null);
+    }
+    const defaultAppearance = this.acroForm.get("DA") || "";
+    // XXX parse
+    return shadow(this, "defaultAppearance", defaultAppearance);
+  }
+
   get documentInfo() {
     const DocumentInfoValidators = {
       Title: isString,
