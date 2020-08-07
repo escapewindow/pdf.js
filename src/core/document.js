@@ -381,6 +381,7 @@ class Page {
     normalizeWhitespace,
     sink,
     combineTextItems,
+    defaultAppearance,
   }) {
     const contentStreamPromise = this.pdfManager.ensure(
       this,
@@ -412,6 +413,7 @@ class Page {
         normalizeWhitespace,
         combineTextItems,
         sink,
+        defaultAppearance,
       });
     });
   }
@@ -584,7 +586,7 @@ class PDFDocument {
       this.acroForm = this.catalog.catDict.get("AcroForm");
       if (this.acroForm) {
         this.xfa = this.acroForm.get("XFA");
-        this.acroForm.annotationFonts = [];
+        this.acroForm.defaultResources = this.acroForm.get("DR") || Dict.empty;
         const fields = this.acroForm.get("Fields");
         if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
           this.acroForm = null; // No fields and no XFA, so it's not a form.
@@ -719,10 +721,11 @@ class PDFDocument {
     if (!this.acroForm) {
       return shadow(this, "defaultAppearance", null);
     }
-    const defaultAppearance = this.acroForm.get("DA") || "";
-    const opList = new OperatorList(null, null);
-    const defaultResources = this.acroForm.get("DR") || Dict.empty;
-    const appearanceStream = new Stream(stringToBytes(defaultAppearance));
+    // test debug
+    // const defaultAppearanceString = this.acroForm.get("DA") || "";
+    const defaultAppearanceString = "";
+    const defaultResources = this.acroForm.defaultResources;
+    const appearanceStream = new Stream(stringToBytes(defaultAppearanceString));
     // XXX do we want to parse the DA string or DR dict?
     // const appearanceStream = new Stream(defaultResources);
     const partialEvaluator = new PartialEvaluator({
@@ -740,24 +743,16 @@ class PDFDocument {
       // options: this.evaluatorOptions,
       options: this.pdfManager.evaluatorOptions,
     });
-    // XXX debug
-    console.log(
-      `this.acroForm.annotationFonts ${this.acroForm.annotationFonts}`
-    );
     // XXX aki
-    partialEvaluator.getAcroformDefaultOperatorList({
+    const defaultAppearance = Dict.empty;
+    partialEvaluator.getAcroformDefaultAppearance({
       stream: appearanceStream,
       task: null,
       resources: defaultResources,
-      operatorList: opList,
-      acroForm: this.acroForm,
+      defaultAppearance,
     });
     // XXX debug
     console.log(`defaultAppearance ${defaultAppearance}`);
-    console.log(
-      "this.acroForm.annotationFonts: " +
-        JSON.stringify(this.acroForm.annotationFonts)
-    );
     // XXX return the string, the data dict, or the operator list ?
     return shadow(this, "defaultAppearance", defaultAppearance);
   }
