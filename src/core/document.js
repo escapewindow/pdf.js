@@ -578,7 +578,8 @@ class PDFDocument {
   }
 
   get defaultAppearance() {
-    // we may not have run parse()...
+    // XXX we haven't run parse()... we probably need to send this stream
+    // through an evaluator.
     let acroForm = Dict.empty;
     if (this.catalog.catDict.get("AcroForm")) {
       acroForm = this.catalog.catDict.AcroForm;
