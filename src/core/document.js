@@ -878,7 +878,6 @@ class PDFDocument {
   }
 
   getPage(pageIndex) {
-    console.log(`get page ${pageIndex}`);
     if (this._pagePromises[pageIndex] !== undefined) {
       return this._pagePromises[pageIndex];
     }
