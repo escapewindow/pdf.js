@@ -295,6 +295,12 @@ class Page {
       "XObject",
       "Font",
     ]);
+    const defaultAppearance = this.pdfManager
+      .ensureDoc("defaultAppearance")
+      .then(da => {
+        return da;
+      });
+    console.log(`page.getOperatorList default appearance ${defaultAppearance}`);
 
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
@@ -323,6 +329,7 @@ class Page {
           task,
           resources: this.resources,
           operatorList: opList,
+          defaultAppearance,
         })
         .then(function () {
           return opList;
@@ -587,6 +594,13 @@ class PDFDocument {
       if (this.acroForm) {
         this.xfa = this.acroForm.get("XFA");
         this.acroForm.defaultResources = this.acroForm.get("DR") || Dict.empty;
+        if (this.acroform.get("DA") && this.acroForm.defaultResources) {
+          // TODO function ?
+          const parts = this.acroForm.DA.split(/\s/);
+          console.log(parts);
+          const defaultAppearance = Dict.empty;
+          this.acroForm.defaultAppearance = defaultAppearance;
+        }
         const fields = this.acroForm.get("Fields");
         if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
           this.acroForm = null; // No fields and no XFA, so it's not a form.
@@ -723,7 +737,7 @@ class PDFDocument {
     }
     // test debug
     // const defaultAppearanceString = this.acroForm.get("DA") || "";
-    const defaultAppearanceString = "";
+    const defaultAppearanceString = "/Zapf 0 Tf 2 g";
     const defaultResources = this.acroForm.defaultResources;
     const appearanceStream = new Stream(stringToBytes(defaultAppearanceString));
     // XXX do we want to parse the DA string or DR dict?
