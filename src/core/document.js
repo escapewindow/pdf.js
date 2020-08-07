@@ -579,10 +579,8 @@ class PDFDocument {
 
   get defaultAppearance() {
     // we may not have run parse()...
-    let acroForm;
-    if (this.acroForm) {
-      acroForm = this.acroForm;
-    } else if (this.catalog.catDict.get("AcroForm")) {
+    let acroForm = Dict.empty;
+    if (this.catalog.catDict.get("AcroForm")) {
       acroForm = this.catalog.catDict.AcroForm;
     }
     const defaultAppearance = Dict.empty;
