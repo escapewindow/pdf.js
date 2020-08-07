@@ -78,6 +78,7 @@ class Page {
     builtInCMapCache,
     globalImageCache,
     defaultAppearance,
+    defaultResources,
   }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
@@ -90,6 +91,7 @@ class Page {
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
     this.defaultAppearance = defaultAppearance;
+    this.defaultResources = defaultResources;
 
     const idCounters = {
       obj: 0,
@@ -128,6 +130,8 @@ class Page {
     // For robustness: The spec states that a \Resources entry has to be
     // present, but can be empty. Some documents still omit it; in this case
     // we return an empty dictionary.
+
+    // XXX aki combine with defaultResources?
     return shadow(
       this,
       "resources",
@@ -557,7 +561,7 @@ class PDFDocument {
         } else {
           this.getDefaultAppearance(this.acroForm);
           console.log(
-            "defaultAppearance2 " +
+            "defaultAppearance " +
               JSON.stringify(this.acroForm.defaultAppearance)
           );
         }
@@ -589,10 +593,13 @@ class PDFDocument {
     // XXX we haven't run parse()... we probably need to send this stream
     // through an evaluator.
     const defaultAppearance = Dict.empty;
+    acroForm.defaultResources = acroForm.get("DR") || Dict.empty;
 
-    if (acroForm.get("DA")) {
-      console.log(`raw da ${acroForm.get("DA")}`);
-      const parts = acroForm.get("DA").split(/\s/);
+    const rawDA = acroForm.get("DA");
+    // const rawDA = "/Zapf 8 Tf 255 0 0 rg";
+    console.log(`raw da ${rawDA}`);
+    if (rawDA) {
+      const parts = rawDA.split(/\s/);
       // poppler
       const idx = parts.indexOf("Tf");
       if (idx >= 1) {
@@ -628,8 +635,6 @@ class PDFDocument {
         }
       }
     }
-    // debug
-    console.log("defaultAppearance " + JSON.stringify(defaultAppearance));
     acroForm.defaultAppearance = defaultAppearance;
   }
 
@@ -888,9 +893,12 @@ class PDFDocument {
         ? this._getLinearizationPage(pageIndex)
         : catalog.getPageDict(pageIndex);
 
-    const defaultAppearance = this.acroForm
-      ? this.acroForm.defaultAppearance
-      : Dict.empty;
+    let defaultAppearance = Dict.empty;
+    let defaultResources = Dict.empty;
+    if (this.acroForm) {
+      defaultAppearance = this.acroForm.defaultAppearance;
+      defaultResources = this.acroForm.defaultResources;
+    }
 
     return (this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
       return new Page({
@@ -904,6 +912,7 @@ class PDFDocument {
         builtInCMapCache: catalog.builtInCMapCache,
         globalImageCache: catalog.globalImageCache,
         defaultAppearance,
+        defaultResources,
       });
     }));
   }
