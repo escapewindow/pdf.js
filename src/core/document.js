@@ -135,7 +135,8 @@ class Page {
     return shadow(
       this,
       "resources",
-      this._getInheritableProperty("Resources") || Dict.empty
+      // this._getInheritableProperty("Resources") || Dict.empty
+      this._getInheritableProperty("Resources") || this.defaultResources
     );
   }
 
