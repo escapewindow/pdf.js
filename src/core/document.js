@@ -51,6 +51,7 @@ import {
 import { NullStream, Stream, StreamsSequenceStream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
 import { calculateMD5 } from "./crypto.js";
+import { ColorSpace } from "./colorspace.js";
 import { Linearization } from "./parser.js";
 import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
@@ -76,6 +77,7 @@ class Page {
     fontCache,
     builtInCMapCache,
     globalImageCache,
+    defaultAppearance,
   }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
@@ -87,6 +89,7 @@ class Page {
     this.globalImageCache = globalImageCache;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
+    this.defaultAppearance = defaultAppearance;
 
     const idCounters = {
       obj: 0,
@@ -574,6 +577,57 @@ class PDFDocument {
     }
   }
 
+  get defaultAppearance() {
+    // we may not have run parse()...
+    let acroForm;
+    if (this.acroForm) {
+      acroForm = this.acroForm;
+    } else if (this.catalog.catDict.get("AcroForm")) {
+      acroForm = this.catalog.catDict.AcroForm;
+    }
+    const defaultAppearance = Dict.empty;
+
+    if (acroForm.get("DA")) {
+      const parts = acroForm.DA.split(/\s/);
+      const idx = parts.indexOf("Tf");
+      if (idx >= 1) {
+        defaultAppearance.fontSize = Number(parts[idx - 1]);
+      }
+      if (idx >= 2) {
+        let fontName = parts[idx - 2];
+        // remove leading "/"
+        fontName = fontName.slice(1, fontName.length);
+        defaultAppearance.fontName = fontName;
+      }
+      // fontColor: search backwards
+      for (let i = parts.length - 1; i >= 0; i--) {
+        if (parts[i] === "g" && i >= 1) {
+          const gray = Math.round(Number(parts[i - 1]) * 0x100);
+          defaultAppearance.fontColor = Util.makeCssRgb(gray, gray, gray);
+        } else if (parts[i] === "rg" && i >= 3) {
+          defaultAppearance.fontColor = Util.makeCssRgb(
+            Number(parts[i - 3]),
+            Number(parts[i - 2]),
+            Number(parts[i - 1])
+          );
+        } else if (parts[i] === "k" && i >= 4) {
+          const args = [
+            Number(parts[i - 4]),
+            Number(parts[i - 3]),
+            Number(parts[i - 2]),
+            Number(parts[i - 1]),
+          ];
+          defaultAppearance.fontColor = Util.makeCssRgb(
+            ColorSpace.singletons.cmyk.getRgb(args, 0)
+          );
+        }
+      }
+    }
+    // debug
+    console.log("defaultAppearance " + JSON.stringify(defaultAppearance));
+    return shadow(this, "defaultAppearance", defaultAppearance);
+  }
+
   get linearization() {
     let linearization = null;
     try {
@@ -819,6 +873,7 @@ class PDFDocument {
   }
 
   getPage(pageIndex) {
+    console.log(`get page ${pageIndex}`);
     if (this._pagePromises[pageIndex] !== undefined) {
       return this._pagePromises[pageIndex];
     }
@@ -829,19 +884,29 @@ class PDFDocument {
         ? this._getLinearizationPage(pageIndex)
         : catalog.getPageDict(pageIndex);
 
-    return (this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
-      return new Page({
-        pdfManager: this.pdfManager,
-        xref: this.xref,
-        pageIndex,
-        pageDict,
-        ref,
-        globalIdFactory: this._globalIdFactory,
-        fontCache: catalog.fontCache,
-        builtInCMapCache: catalog.builtInCMapCache,
-        globalImageCache: catalog.globalImageCache,
-      });
-    }));
+    const defaultAppearancePromise = this.pdfManager.ensure(
+      this,
+      "defaultAppearance"
+    );
+
+    return (this._pagePromises[pageIndex] = defaultAppearancePromise.then(
+      () => {
+        return promise.then(([pageDict, ref]) => {
+          return new Page({
+            pdfManager: this.pdfManager,
+            xref: this.xref,
+            pageIndex,
+            pageDict,
+            ref,
+            globalIdFactory: this._globalIdFactory,
+            fontCache: catalog.fontCache,
+            builtInCMapCache: catalog.builtInCMapCache,
+            globalImageCache: catalog.globalImageCache,
+            defaultAppearance: this.defaultAppearance,
+          });
+        });
+      }
+    ));
   }
 
   checkFirstPage() {
