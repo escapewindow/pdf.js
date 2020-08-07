@@ -51,6 +51,7 @@ import {
 import { NullStream, Stream, StreamsSequenceStream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
 import { calculateMD5 } from "./crypto.js";
+import { ColorSpace } from "./colorspace.js";
 import { Linearization } from "./parser.js";
 import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
@@ -76,6 +77,8 @@ class Page {
     fontCache,
     builtInCMapCache,
     globalImageCache,
+    defaultAppearance,
+    defaultResources,
   }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
@@ -87,6 +90,8 @@ class Page {
     this.globalImageCache = globalImageCache;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
+    this.defaultAppearance = defaultAppearance;
+    this.defaultResources = defaultResources;
 
     const idCounters = {
       obj: 0,
@@ -128,7 +133,7 @@ class Page {
     return shadow(
       this,
       "resources",
-      this._getInheritableProperty("Resources") || Dict.empty
+      this._getInheritableProperty("Resources") || this.defaultResources
     );
   }
 
@@ -550,6 +555,8 @@ class PDFDocument {
         const fields = this.acroForm.get("Fields");
         if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
           this.acroForm = null; // No fields and no XFA, so it's not a form.
+        } else {
+          this.getDefaultAppearance(this.acroForm);
         }
       }
     } catch (ex) {
@@ -572,6 +579,50 @@ class PDFDocument {
       }
       info("Cannot fetch Collection dictionary.");
     }
+  }
+
+  getDefaultAppearance(acroForm) {
+    const defaultAppearance = Dict.empty;
+    acroForm.defaultResources = acroForm.get("DR") || Dict.empty;
+
+    const rawDA = acroForm.get("DA");
+    if (rawDA) {
+      const parts = rawDA.split(/\s/);
+      const idx = parts.indexOf("Tf");
+      if (idx >= 1) {
+        defaultAppearance.fontSize = Number(parts[idx - 1]);
+      }
+      if (idx >= 2) {
+        let fontName = parts[idx - 2];
+        // remove leading "/"
+        fontName = fontName.slice(1, fontName.length);
+        defaultAppearance.fontName = fontName;
+      }
+      // fontColor: search backwards
+      for (let i = parts.length - 1; i >= 0; i--) {
+        if (parts[i] === "g" && i >= 1) {
+          const gray = Math.round(Number(parts[i - 1]) * 0x100);
+          defaultAppearance.fontColor = Util.makeCssRgb(gray, gray, gray);
+        } else if (parts[i] === "rg" && i >= 3) {
+          defaultAppearance.fontColor = Util.makeCssRgb(
+            Number(parts[i - 3]),
+            Number(parts[i - 2]),
+            Number(parts[i - 1])
+          );
+        } else if (parts[i] === "k" && i >= 4) {
+          const args = [
+            Number(parts[i - 4]),
+            Number(parts[i - 3]),
+            Number(parts[i - 2]),
+            Number(parts[i - 1]),
+          ];
+          defaultAppearance.fontColor = Util.makeCssRgb(
+            ColorSpace.singletons.cmyk.getRgb(args, 0)
+          );
+        }
+      }
+    }
+    acroForm.defaultAppearance = defaultAppearance;
   }
 
   get linearization() {
@@ -829,6 +880,13 @@ class PDFDocument {
         ? this._getLinearizationPage(pageIndex)
         : catalog.getPageDict(pageIndex);
 
+    const defaultAppearance = this.acroForm
+      ? this.acroForm.defaultAppearance
+      : Dict.empty;
+    const defaultResources = this.acroForm
+      ? this.acroForm.defaultResources
+      : Dict.empty;
+
     return (this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
       return new Page({
         pdfManager: this.pdfManager,
@@ -840,6 +898,8 @@ class PDFDocument {
         fontCache: catalog.fontCache,
         builtInCMapCache: catalog.builtInCMapCache,
         globalImageCache: catalog.globalImageCache,
+        defaultAppearance,
+        defaultResources,
       });
     }));
   }
