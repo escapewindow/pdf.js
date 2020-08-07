@@ -695,6 +695,8 @@ class PDFDocument {
   }
 
   get defaultAppearance() {
+    // XXX this won't work, this.acroForm isn't set early enough
+    // XXX I need to pick up DA in the first pass raw parse: xref?
     if (!this.acroForm) {
       return shadow(this, "defaultAppearance", null);
     }
