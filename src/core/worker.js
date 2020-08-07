@@ -574,51 +574,46 @@ class WorkerMessageHandler {
       sink.onPull = function (desiredSize) {};
       sink.onCancel = function (reason) {};
 
-      pdfManager
-        .ensureDoc("defaultAppearance")
-        .then(function (defaultAppearance) {
-          pdfManager.getPage(pageIndex).then(function (page) {
-            var task = new WorkerTask("GetTextContent: page " + pageIndex);
-            startWorkerTask(task);
+      pdfManager.getPage(pageIndex).then(function (page) {
+        var task = new WorkerTask("GetTextContent: page " + pageIndex);
+        startWorkerTask(task);
 
-            // NOTE: Keep this condition in sync with the `info` helper
-            // function.
-            const start = verbosity >= VerbosityLevel.INFOS ? Date.now() : 0;
+        // NOTE: Keep this condition in sync with the `info` helper
+        // function.
+        const start = verbosity >= VerbosityLevel.INFOS ? Date.now() : 0;
 
-            page
-              .extractTextContent({
-                handler,
-                task,
-                sink,
-                normalizeWhitespace: data.normalizeWhitespace,
-                combineTextItems: data.combineTextItems,
-                defaultAppearance: defaultAppearance,
-              })
-              .then(
-                function () {
-                  finishWorkerTask(task);
+        page
+          .extractTextContent({
+            handler,
+            task,
+            sink,
+            normalizeWhitespace: data.normalizeWhitespace,
+            combineTextItems: data.combineTextItems,
+          })
+          .then(
+            function () {
+              finishWorkerTask(task);
 
-                  if (start) {
-                    info(
-                      `page=${pageIndex + 1} - getTextContent: time=` +
-                        `${Date.now() - start}ms`
-                    );
-                  }
-                  sink.close();
-                },
-                function (reason) {
-                  finishWorkerTask(task);
-                  if (task.terminated) {
-                    return; // ignoring errors from the terminated thread
-                  }
-                  sink.error(reason);
+              if (start) {
+                info(
+                  `page=${pageIndex + 1} - getTextContent: time=` +
+                    `${Date.now() - start}ms`
+                );
+              }
+              sink.close();
+            },
+            function (reason) {
+              finishWorkerTask(task);
+              if (task.terminated) {
+                return; // ignoring errors from the terminated thread
+              }
+              sink.error(reason);
 
-                  // TODO: Should `reason` be re-thrown here (currently that
-                  // causes "Uncaught exception: ..." messages in the console)?
-                }
-              );
-          });
-        });
+              // TODO: Should `reason` be re-thrown here (currently that
+              // causes "Uncaught exception: ..." messages in the console)?
+            }
+          );
+      });
     });
 
     handler.on("FontFallback", function (data) {

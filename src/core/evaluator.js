@@ -1285,6 +1285,7 @@ class PartialEvaluator {
     task,
     resources,
     operatorList,
+    defaultAppearance = Dict.empty,
     initialState = null,
   }) {
     // Ensure that `resources`/`initialState` is correctly initialized,
@@ -1886,6 +1887,7 @@ class PartialEvaluator {
     normalizeWhitespace = false,
     combineTextItems = false,
     sink,
+    // XXX deal with defaultAppearance
     defaultAppearance = Dict.empty,
     seenStyles = Object.create(null),
   }) {
@@ -2477,6 +2479,7 @@ class PartialEvaluator {
                     normalizeWhitespace,
                     combineTextItems,
                     sink: sinkWrapper,
+                    defaultAppearance,
                     seenStyles,
                   })
                   .then(function () {
