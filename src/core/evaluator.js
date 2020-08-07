@@ -1886,6 +1886,7 @@ class PartialEvaluator {
     normalizeWhitespace = false,
     combineTextItems = false,
     sink,
+    defaultAppearance = Dict.empty,
     seenStyles = Object.create(null),
   }) {
     // Ensure that `resources`/`stateManager` is correctly initialized,
@@ -2585,20 +2586,19 @@ class PartialEvaluator {
     });
   }
 
-  getAcroformDefaultOperatorList({
+  getAcroformDefaultAppearance({
     stream,
     task,
     resources,
     operatorList,
-    acroForm,
-    initialState = null,
+    defaultAppearance,
   }) {
     resources = resources || Dict.empty;
-    initialState = initialState || new EvalState();
+    const initialState = new EvalState();
 
     if (!operatorList) {
       throw new Error(
-        'getAcroformDefaultOperatorList: missing "operatorList" parameter'
+        'getAcroformDefaultAppearance: missing "operatorList" parameter'
       );
     }
 
@@ -2626,12 +2626,11 @@ class PartialEvaluator {
           }
         }, reject);
       };
-      // XXX do we need `task` set ?
+      // XXX do we need `task` and operatorList?
       // task.ensureNotTerminated();
       timeSlotManager.reset();
       var stop,
-        operation = {},
-        data = {};
+        operation = {};
       while (!(stop = timeSlotManager.check())) {
         // The arguments parsed by read() are used beyond this loop, so we
         // cannot reuse the same array on each iteration. Therefore we pass
@@ -2644,14 +2643,13 @@ class PartialEvaluator {
         var args = operation.args;
         var fn = operation.fn;
 
-        // XXX poppler also calls `PSOutputDev::setupImages` and
-        // `PSOutputDev::setupForms` here.
-        // We're also only parsing DA, not DR; we're missing a lot.
+        // XXX We're also only parsing DA, not DR; we're missing other fonts.
         switch (fn | 0) {
           case OPS.setFont:
             args = args.slice();
             var fontName = args[0].name;
             // XXX maybe just loadFont instead of handleSetFont?
+            // XXX do we even need that?
             next(
               self.loadFont(fontName, null, resources)
               // XXX if we want the translated font
@@ -2661,9 +2659,8 @@ class PartialEvaluator {
               //    translated.font.fontMatrix || FONT_IDENTITY_MATRIX;
               //  })
             );
-            data.annotationFonts = acroForm.annotationFonts.slice();
-            data.fontRefName = args[0].name;
-            data.fontSize = args[1];
+            defaultAppearance.fontRefName = args[0].name;
+            defaultAppearance.fontSize = args[1];
             break;
           case OPS.setGrayFill:
             args = args.slice();
@@ -2671,7 +2668,7 @@ class PartialEvaluator {
               warn("Incorrect annotation gray color length");
             } else {
               const gray = Math.round(args[0] * 0x100);
-              data.fontColor = Util.makeCssRgb(gray, gray, gray);
+              defaultAppearance.fontColor = Util.makeCssRgb(gray, gray, gray);
             }
             break;
           case OPS.setFillRGBColor:
@@ -2679,13 +2676,13 @@ class PartialEvaluator {
             if (args.length < 3) {
               warn("Incorrect annotation RGB color length");
             } else {
-              data.fontColor = Util.makeCssRgb(args[0], args[1], args[2]);
+              defaultAppearance.fontColor = Util.makeCssRgb(
+                args[0],
+                args[1],
+                args[2]
+              );
             }
             break;
-        }
-        if (data) {
-          // XXX should I add this to annotationFonts or defaultResources?
-          acroForm.annotationFonts.push(data);
         }
         operatorList.addOp(fn, args);
       }
