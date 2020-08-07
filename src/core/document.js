@@ -588,6 +588,7 @@ class PDFDocument {
 
     if (acroForm.get("DA")) {
       const parts = acroForm.DA.split(/\s/);
+      // poppler
       const idx = parts.indexOf("Tf");
       if (idx >= 1) {
         defaultAppearance.fontSize = Number(parts[idx - 1]);
