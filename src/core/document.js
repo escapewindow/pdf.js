@@ -548,11 +548,18 @@ class PDFDocument {
     // Check if AcroForms are present in the document.
     try {
       this.acroForm = this.catalog.catDict.get("AcroForm");
+      console.log("No acroForm");
       if (this.acroForm) {
         this.xfa = this.acroForm.get("XFA");
         const fields = this.acroForm.get("Fields");
         if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
           this.acroForm = null; // No fields and no XFA, so it's not a form.
+        } else {
+          this.getDefaultAppearance(this.acroForm);
+          console.log(
+            "defaultAppearance2 " +
+              JSON.stringify(this.acroForm.defaultAppearance)
+          );
         }
       }
     } catch (ex) {
@@ -560,6 +567,7 @@ class PDFDocument {
         throw ex;
       }
       info("Cannot fetch AcroForm entry; assuming no AcroForms are present");
+      console.log("AcroForm exception" + ex);
       this.acroForm = null;
     }
 
@@ -577,17 +585,14 @@ class PDFDocument {
     }
   }
 
-  get defaultAppearance() {
+  getDefaultAppearance(acroForm) {
     // XXX we haven't run parse()... we probably need to send this stream
     // through an evaluator.
-    let acroForm = Dict.empty;
-    if (this.catalog.catDict.get("AcroForm")) {
-      acroForm = this.catalog.catDict.AcroForm;
-    }
     const defaultAppearance = Dict.empty;
 
     if (acroForm.get("DA")) {
-      const parts = acroForm.DA.split(/\s/);
+      console.log(`raw da ${acroForm.get("DA")}`);
+      const parts = acroForm.get("DA").split(/\s/);
       // poppler
       const idx = parts.indexOf("Tf");
       if (idx >= 1) {
@@ -625,7 +630,7 @@ class PDFDocument {
     }
     // debug
     console.log("defaultAppearance " + JSON.stringify(defaultAppearance));
-    return shadow(this, "defaultAppearance", defaultAppearance);
+    acroForm.defaultAppearance = defaultAppearance;
   }
 
   get linearization() {
@@ -884,29 +889,24 @@ class PDFDocument {
         ? this._getLinearizationPage(pageIndex)
         : catalog.getPageDict(pageIndex);
 
-    const defaultAppearancePromise = this.pdfManager.ensure(
-      this,
-      "defaultAppearance"
-    );
+    const defaultAppearance = this.acroForm
+      ? this.acroForm.defaultAppearance
+      : Dict.empty;
 
-    return (this._pagePromises[pageIndex] = defaultAppearancePromise.then(
-      () => {
-        return promise.then(([pageDict, ref]) => {
-          return new Page({
-            pdfManager: this.pdfManager,
-            xref: this.xref,
-            pageIndex,
-            pageDict,
-            ref,
-            globalIdFactory: this._globalIdFactory,
-            fontCache: catalog.fontCache,
-            builtInCMapCache: catalog.builtInCMapCache,
-            globalImageCache: catalog.globalImageCache,
-            defaultAppearance: this.defaultAppearance,
-          });
-        });
-      }
-    ));
+    return (this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
+      return new Page({
+        pdfManager: this.pdfManager,
+        xref: this.xref,
+        pageIndex,
+        pageDict,
+        ref,
+        globalIdFactory: this._globalIdFactory,
+        fontCache: catalog.fontCache,
+        builtInCMapCache: catalog.builtInCMapCache,
+        globalImageCache: catalog.globalImageCache,
+        defaultAppearance,
+      });
+    }));
   }
 
   checkFirstPage() {
