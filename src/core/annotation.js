@@ -83,6 +83,8 @@ class AnnotationFactory {
       id,
       pdfManager,
       acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
+      defaultAppearance:
+        acroForm instanceof Dict ? acroForm.defaultAppearance : Dict.empty,
     };
 
     switch (subtype) {
@@ -258,9 +260,9 @@ class Annotation {
       rect: this.rectangle,
       subtype: params.subtype,
       annotationFonts: [],
-      fontRefName: null,
-      fontSize: 0,
-      fontColor: null,
+      fontRefName: dict.defaultAppearance.get("fontRefName"),
+      fontSize: dict.defaultAppearance.get("fontSize"),
+      fontColor: dict.defaultAppearance.get("fontColor"),
     };
   }
 
