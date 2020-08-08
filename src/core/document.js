@@ -714,6 +714,9 @@ class PDFDocument {
     return shadow(this, "numPages", num);
   }
 
+  // XXX maybe make this a function? save this._defaultAppearance and return it
+  // if set. Call it from Page.getOperatorList and/or extractTextContent so
+  // we can have a `handler` set?
   get defaultAppearance() {
     // XXX this won't work, this.acroForm isn't set early enough
     // XXX I need to pick up DA in the first pass raw parse: xref?
