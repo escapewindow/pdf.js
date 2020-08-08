@@ -52,20 +52,32 @@ class AnnotationFactory {
    */
   static create(xref, ref, pdfManager, idFactory) {
     return pdfManager.ensureDoc("acroForm").then(acroForm => {
-      return pdfManager.ensure(this, "_create", [
-        xref,
-        ref,
-        pdfManager,
-        idFactory,
-        acroForm,
-      ]);
+      return pdfManager
+        .ensureDoc("defaultAppearance")
+        .then(defaultAppearance => {
+          return pdfManager.ensure(this, "_create", [
+            xref,
+            ref,
+            pdfManager,
+            idFactory,
+            acroForm,
+            defaultAppearance,
+          ]);
+        });
     });
   }
 
   /**
    * @private
    */
-  static _create(xref, ref, pdfManager, idFactory, acroForm) {
+  static _create(
+    xref,
+    ref,
+    pdfManager,
+    idFactory,
+    acroForm,
+    defaultAppearance
+  ) {
     const dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return undefined;
@@ -86,6 +98,7 @@ class AnnotationFactory {
       id,
       pdfManager,
       acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
+      defaultAppearance,
     };
 
     switch (subtype) {

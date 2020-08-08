@@ -295,12 +295,6 @@ class Page {
       "XObject",
       "Font",
     ]);
-    const defaultAppearance = this.pdfManager
-      .ensureDoc("defaultAppearance")
-      .then(da => {
-        return da;
-      });
-    console.log(`page.getOperatorList default appearance ${defaultAppearance}`);
 
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
@@ -329,7 +323,6 @@ class Page {
           task,
           resources: this.resources,
           operatorList: opList,
-          defaultAppearance,
         })
         .then(function () {
           return opList;
@@ -388,7 +381,6 @@ class Page {
     normalizeWhitespace,
     sink,
     combineTextItems,
-    defaultAppearance,
   }) {
     const contentStreamPromise = this.pdfManager.ensure(
       this,
@@ -420,7 +412,6 @@ class Page {
         normalizeWhitespace,
         combineTextItems,
         sink,
-        defaultAppearance,
       });
     });
   }
@@ -593,14 +584,6 @@ class PDFDocument {
       this.acroForm = this.catalog.catDict.get("AcroForm");
       if (this.acroForm) {
         this.xfa = this.acroForm.get("XFA");
-        this.acroForm.defaultResources = this.acroForm.get("DR") || Dict.empty;
-        if (this.acroform.get("DA") && this.acroForm.defaultResources) {
-          // TODO function ?
-          const parts = this.acroForm.DA.split(/\s/);
-          console.log(parts);
-          const defaultAppearance = Dict.empty;
-          this.acroForm.defaultAppearance = defaultAppearance;
-        }
         const fields = this.acroForm.get("Fields");
         if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
           this.acroForm = null; // No fields and no XFA, so it's not a form.
@@ -737,16 +720,17 @@ class PDFDocument {
     if (!this.acroForm) {
       return shadow(this, "defaultAppearance", null);
     }
-    // test debug
-    // const defaultAppearanceString = this.acroForm.get("DA") || "";
-    const defaultAppearanceString = "/Zapf 0 Tf 2 g";
+    const defaultAppearanceString = this.acroForm.get("DA") || "";
+    console.log(`defaultAppearanceString ${defaultAppearanceString}`);
     const defaultResources = this.acroForm.defaultResources;
     const appearanceStream = new Stream(stringToBytes(defaultAppearanceString));
+    const opList = new OperatorList(null, null); // XXX do we need this?
     // XXX do we want to parse the DA string or DR dict?
     // const appearanceStream = new Stream(defaultResources);
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
       // XXX how to get handler
+      // XXX either fill in handler or get rid of operatorlist?
       // handler,
       handler: null,
       // pageIndex: this.pageIndex,
@@ -761,12 +745,15 @@ class PDFDocument {
     });
     // XXX aki
     const defaultAppearance = Dict.empty;
-    partialEvaluator.getAcroformDefaultAppearance({
-      stream: appearanceStream,
-      task: null,
-      resources: defaultResources,
-      defaultAppearance,
-    });
+    Promise.resolve(
+      partialEvaluator.getAcroformDefaultAppearance({
+        stream: appearanceStream,
+        task: null,
+        resources: defaultResources,
+        operatorList: opList,
+        defaultAppearance,
+      })
+    );
     // XXX debug
     console.log(`defaultAppearance ${defaultAppearance}`);
     // XXX return the string, the data dict, or the operator list ?

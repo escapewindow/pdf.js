@@ -970,13 +970,9 @@ class PartialEvaluator {
     }
 
     if (this.fontCache.has(fontRef)) {
-      // XXX debug
-      // console.log(`Font ${fontName} is in the cache`);
       return this.fontCache.get(fontRef);
     }
 
-    // XXX debug
-    console.log(`Loading font ${fontName}`);
     font = xref.fetchIfRef(fontRef);
     if (!isDict(font)) {
       return errorFont();
@@ -1056,7 +1052,6 @@ class PartialEvaluator {
     // Keep track of each font we translated so the caller can
     // load them asynchronously before calling display on a page.
     font.loadedName = `${this.idFactory.getDocId()}_${fontID}`;
-    console.log(`loadedName ${font.loadedName}`);
 
     font.translated = fontCapability.promise;
 
@@ -1285,7 +1280,6 @@ class PartialEvaluator {
     task,
     resources,
     operatorList,
-    defaultAppearance = Dict.empty,
     initialState = null,
   }) {
     // Ensure that `resources`/`initialState` is correctly initialized,
@@ -1887,8 +1881,6 @@ class PartialEvaluator {
     normalizeWhitespace = false,
     combineTextItems = false,
     sink,
-    // XXX deal with defaultAppearance
-    defaultAppearance = Dict.empty,
     seenStyles = Object.create(null),
   }) {
     // Ensure that `resources`/`stateManager` is correctly initialized,
