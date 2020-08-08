@@ -55,7 +55,6 @@ import { ColorSpace } from "./colorspace.js";
 import { Linearization } from "./parser.js";
 import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
-import { WorkerTask } from "./worker.js";
 
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
@@ -408,8 +407,6 @@ class Page {
   }
 
   get _parsedAnnotations() {
-    const pdfManager = this.pdfManager;
-
     const parsedAnnotations = this.pdfManager
       .ensure(this, "annotations")
       .then(() => {
@@ -420,30 +417,7 @@ class Page {
               this.xref,
               annotationRef,
               this.pdfManager,
-              this.idFactory,
-              new PartialEvaluator({
-                pdfManager: this.pdfManager,
-                xref: this.xref,
-                handler: {
-                  send: (actionname, data) => {
-                    if (
-                      pdfManager &&
-                      pdfManager.pdfDocument &&
-                      pdfManager.pdfDocument.acroForm
-                    ) {
-                      pdfManager.pdfDocument.acroForm.annotationFonts.push(
-                        data
-                      );
-                    }
-                  },
-                },
-                pageIndex: this.pageIndex,
-                idFactory: this.idFactory,
-                fontCache: this.fontCache,
-                builtInCMapCache: this.builtInCMapCache,
-                options: this.evaluatorOptions,
-              }),
-              new WorkerTask("GetAnnotationAppearances")
+              this._localIdFactory
             )
           );
         }
@@ -577,7 +551,6 @@ class PDFDocument {
       this.acroForm = this.catalog.catDict.get("AcroForm");
       if (this.acroForm) {
         this.xfa = this.acroForm.get("XFA");
-        this.acroForm.annotationFonts = [];
         const fields = this.acroForm.get("Fields");
         if (
           (!fields || !Array.isArray(fields) || fields.length === 0) &&

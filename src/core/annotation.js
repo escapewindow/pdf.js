@@ -46,12 +46,10 @@ class AnnotationFactory {
    * @param {Object} ref
    * @param {PDFManager} pdfManager
    * @param {Object} idFactory
-   * @param {PartialEvaluator} evaluator
-   * @param {WorkerTask} task
-   * @return {Promise} A promise that is resolved with an {Annotation}
+   * @returns {Promise} A promise that is resolved with an {Annotation}
    *   instance.
    */
-  static create(xref, ref, pdfManager, idFactory, evaluator, task) {
+  static create(xref, ref, pdfManager, idFactory) {
     return pdfManager.ensureDoc("acroForm").then(acroForm => {
       return pdfManager.ensure(this, "_create", [
         xref,
@@ -59,8 +57,6 @@ class AnnotationFactory {
         pdfManager,
         idFactory,
         acroForm,
-        evaluator,
-        task,
       ]);
     });
   }
@@ -68,7 +64,7 @@ class AnnotationFactory {
   /**
    * @private
    */
-  static _create(xref, ref, pdfManager, idFactory, acroForm, evaluator, task) {
+  static _create(xref, ref, pdfManager, idFactory, acroForm) {
     const dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return undefined;
@@ -87,8 +83,6 @@ class AnnotationFactory {
       id,
       pdfManager,
       acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
-      evaluator,
-      task,
     };
 
     switch (subtype) {
@@ -174,7 +168,7 @@ class AnnotationFactory {
               "falling back to base annotation."
           );
         }
-        return Promise.resolve(new Annotation(parameters));
+        return new Annotation(parameters);
     }
   }
 }
