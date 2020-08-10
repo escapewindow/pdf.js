@@ -2471,7 +2471,6 @@ class PartialEvaluator {
                     normalizeWhitespace,
                     combineTextItems,
                     sink: sinkWrapper,
-                    defaultAppearance,
                     seenStyles,
                   })
                   .then(function () {
