@@ -2580,13 +2580,7 @@ class PartialEvaluator {
     });
   }
 
-  getAcroformDefaultAppearance({
-    stream,
-    task,
-    resources,
-    operatorList,
-    defaultAppearance,
-  }) {
+  getAcroformDefaultAppearance({ stream, task, resources, operatorList }) {
     resources = resources || Dict.empty;
     const initialState = new EvalState();
 
@@ -2640,42 +2634,40 @@ class PartialEvaluator {
         // XXX We're also only parsing DA, not DR; we're missing other fonts.
         switch (fn | 0) {
           case OPS.setFont:
-            args = args.slice();
-            var fontName = args[0].name;
-            // XXX maybe just loadFont instead of handleSetFont?
-            // XXX do we even need that?
+            var fontSize = args[1];
+            console.log(`font size ${fontSize}`);
+            // eagerly collect all fonts
             next(
-              self.loadFont(fontName, null, resources)
-              // XXX if we want the translated font
-              // .then(function (translated) {
-              //   textState.font = translated.font;
-              //   textState.fontMatrix =
-              //    translated.font.fontMatrix || FONT_IDENTITY_MATRIX;
-              //  })
+              self
+                .handleSetFont(
+                  resources,
+                  args,
+                  null,
+                  operatorList,
+                  task,
+                  stateManager.state
+                )
+                .then(function (loadedName) {
+                  operatorList.addDependency(loadedName);
+                  operatorList.addOp(OPS.setFont, [loadedName, fontSize]);
+                })
             );
-            defaultAppearance.fontRefName = args[0].name;
-            defaultAppearance.fontSize = args[1];
             break;
-          case OPS.setGrayFill:
-            args = args.slice();
-            if (args.length < 1) {
-              warn("Incorrect annotation gray color length");
-            } else {
-              const gray = Math.round(args[0] * 0x100);
-              defaultAppearance.fontColor = Util.makeCssRgb(gray, gray, gray);
-            }
+          case OPS.setFillGray:
+            // XXX copying setStrokeGray
+            stateManager.state.fillColorSpace = ColorSpace.singletons.gray;
+            args = ColorSpace.singletons.gray.getRgb(args, 0);
+            fn = OPS.setFillRGBColor;
             break;
           case OPS.setFillRGBColor:
-            args = args.slice();
-            if (args.length < 3) {
-              warn("Incorrect annotation RGB color length");
-            } else {
-              defaultAppearance.fontColor = Util.makeCssRgb(
-                args[0],
-                args[1],
-                args[2]
-              );
-            }
+            stateManager.state.fillColorSpace = ColorSpace.singletons.rgb;
+            args = ColorSpace.singletons.rgb.getRgb(args, 0);
+            console.log("setFillRGBColor " + JSON.stringify(args));
+            break;
+          case OPS.setFillCMYKColor:
+            stateManager.state.fillColorSpace = ColorSpace.singletons.cmyk;
+            args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+            fn = OPS.setFillRGBColor;
             break;
         }
         operatorList.addOp(fn, args);
@@ -2693,13 +2685,11 @@ class PartialEvaluator {
       if (this.options.ignoreErrors) {
         // Error(s) in the OperatorList -- sending unsupported feature
         // notification and allow rendering to continue.
-        // XXX we may not have `handler` set
-        // this.handler.send("UnsupportedFeature", {
-        //   featureId: UNSUPPORTED_FEATURES.errorOperatorList,
-        // });
-        // XXX we may not have `task` set
+        this.handler.send("UnsupportedFeature", {
+          featureId: UNSUPPORTED_FEATURES.errorOperatorList,
+        });
         warn(
-          `getOperatorList - ignoring errors during ` +  // "${task.name}" ` +
+          `getOperatorList - ignoring errors during "${task.name}" ` +
             `task: "${reason}".`
         );
 

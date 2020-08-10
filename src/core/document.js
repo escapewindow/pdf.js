@@ -81,6 +81,8 @@ class Page {
     fontCache,
     builtInCMapCache,
     globalImageCache,
+    defaultAppearance,
+    defaultResources,
   }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
@@ -92,6 +94,8 @@ class Page {
     this.globalImageCache = globalImageCache;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
+    this.defaultAppearance = defaultAppearance;
+    this.defaultResources = defaultResources;
 
     const idCounters = {
       obj: 0,
@@ -308,10 +312,6 @@ class Page {
       "XObject",
       "Font",
     ]);
-    this.defaultAppearance = this.pdfManager.pdfDocument.getDefaultAppearanceData(
-      handler
-    );
-    console.log("defaultAppearance " + JSON.stringify(this.defaultAppearance));
 
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
@@ -333,6 +333,8 @@ class Page {
         pageIndex: this.pageIndex,
         intent,
       });
+
+      this.handleDefaultAppearance(partialEvaluator, opList, task);
 
       return partialEvaluator
         .getOperatorList({
@@ -390,6 +392,20 @@ class Page {
         });
       }
     );
+  }
+
+  handleDefaultAppearance(partialEvaluator, opList, task) {
+    if (this.defaultAppearance) {
+      return Dict.empty;
+    }
+
+    const appearanceStream = new StringStream(this.defaultAppearance);
+    return partialEvaluator.getAcroformDefaultAppearance({
+      stream: appearanceStream,
+      task,
+      resources: this.defaultResources,
+      operatorList: opList,
+    });
   }
 
   extractTextContent({
@@ -606,6 +622,7 @@ class PDFDocument {
         this.xfa = this.acroForm.get("XFA");
         const fields = this.acroForm.get("Fields");
         this.acroForm.defaultAppearance = this.acroForm.get("DA") || "";
+        this.acroForm.defaultAppearance = "/Cour 8 Tf 0 255 255 rg";
         this.acroForm.defaultResources = this.acroForm.get("DR") || Dict.empty;
         if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
           this.acroForm = null; // No fields and no XFA, so it's not a form.
@@ -734,40 +751,6 @@ class PDFDocument {
     const linearization = this.linearization;
     const num = linearization ? linearization.numPages : this.catalog.numPages;
     return shadow(this, "numPages", num);
-  }
-
-  getDefaultAppearanceData(handler) {
-    if (
-      this._defaultAppearance ||
-      !this.acroForm ||
-      !this.acroForm.defaultAppearance
-    ) {
-      return Dict.empty;
-    }
-
-    const appearanceStream = new StringStream(this.acroForm.defaultAppearance);
-    const opList = new OperatorList(null, null);
-    const partialEvaluator = new PartialEvaluator({
-      xref: this.xref,
-      handler,
-      pageIndex: null,
-      idFactory: this._globalIdFactory,
-      fontCache: this.catalog.fontCache,
-      builtInCMapCache: this.catalog.builtInCMapCache,
-      globalImageCache: this.catalog.globalImageCache,
-      options: this.pdfManager.evaluatorOptions,
-    });
-    const defaultAppearance = Dict.empty;
-    Promise.resolve(
-      partialEvaluator.getAcroformDefaultAppearance({
-        stream: appearanceStream,
-        task: null,
-        resources: this.acroForm.defaultResources,
-        operatorList: opList,
-        defaultAppearance,
-      })
-    );
-    return shadow(this, "_defaultAppearance", defaultAppearance);
   }
 
   get documentInfo() {
@@ -922,6 +905,13 @@ class PDFDocument {
         ? this._getLinearizationPage(pageIndex)
         : catalog.getPageDict(pageIndex);
 
+    const defaultAppearance = this.acroForm
+      ? this.acroForm.defaultAppearance
+      : "";
+    const defaultResources = this.acroForm
+      ? this.acroForm.defaultResources
+      : Dict.empty;
+
     return (this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
       return new Page({
         pdfManager: this.pdfManager,
@@ -933,6 +923,8 @@ class PDFDocument {
         fontCache: catalog.fontCache,
         builtInCMapCache: catalog.builtInCMapCache,
         globalImageCache: catalog.globalImageCache,
+        defaultAppearance,
+        defaultResources,
       });
     }));
   }
