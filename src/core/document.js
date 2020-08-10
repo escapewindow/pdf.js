@@ -258,6 +258,11 @@ class Page {
       "XObject",
       "Font",
     ]);
+    this.defaultAppearance = this.pdfManager.pdfDocument(
+      "getDefaultAppearance",
+      handler
+    );
+    console.log(`defaultAppearance ${this.defaultAppearance}`);
 
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
@@ -410,7 +415,9 @@ class Page {
               this.xref,
               annotationRef,
               this.pdfManager,
-              this._localIdFactory
+              this._localIdFactory,
+              // This assumes we've called getOperatorList already
+              this.defaultAppearance
             ).catch(function (reason) {
               warn(`_parsedAnnotations: "${reason}".`);
               return null;
@@ -515,6 +522,7 @@ class PDFDocument {
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
     this._pagePromises = [];
+    this._defaultAppearance = null;
 
     const idCounters = {
       font: 0,
@@ -677,39 +685,26 @@ class PDFDocument {
     return shadow(this, "numPages", num);
   }
 
-  // XXX maybe make this a function? save this._defaultAppearance and return it
-  // if set. Call it from Page.getOperatorList and/or extractTextContent so
-  // we can have a `handler` set?
-  get defaultAppearance() {
-    // XXX this won't work, this.acroForm isn't set early enough
-    // XXX I need to pick up DA in the first pass raw parse: xref?
-    if (!this.acroForm) {
-      return shadow(this, "defaultAppearance", null);
+  getDefaultAppearance(handler) {
+    if (this._defaultAppearance || !this.acroForm) {
+      return this._defaultAppearance;
     }
+
     const defaultAppearanceString = this.acroForm.get("DA") || "";
     console.log(`defaultAppearanceString ${defaultAppearanceString}`);
-    const defaultResources = this.acroForm.defaultResources;
+    const defaultResources = this.acroForm.get("DR") || Dict.empty;
     const appearanceStream = new Stream(stringToBytes(defaultAppearanceString));
-    const opList = new OperatorList(null, null); // XXX do we need this?
-    // XXX do we want to parse the DA string or DR dict?
-    // const appearanceStream = new Stream(defaultResources);
+    const opList = new OperatorList(null, null);
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
-      // XXX how to get handler
-      // XXX either fill in handler or get rid of operatorlist?
-      // handler,
-      handler: null,
-      // pageIndex: this.pageIndex,
+      handler,
       pageIndex: null,
-      // idFactory: this._localIdFactory,
       idFactory: this._globalIdFactory,
       fontCache: this.catalog.fontCache,
       builtInCMapCache: this.catalog.builtInCMapCache,
       globalImageCache: this.catalog.globalImageCache,
-      // options: this.evaluatorOptions,
       options: this.pdfManager.evaluatorOptions,
     });
-    // XXX aki
     const defaultAppearance = Dict.empty;
     Promise.resolve(
       partialEvaluator.getAcroformDefaultAppearance({
@@ -720,10 +715,7 @@ class PDFDocument {
         defaultAppearance,
       })
     );
-    // XXX debug
-    console.log(`defaultAppearance ${defaultAppearance}`);
-    // XXX return the string, the data dict, or the operator list ?
-    return shadow(this, "defaultAppearance", defaultAppearance);
+    return shadow(this, "_defaultAppearance", defaultAppearance);
   }
 
   get documentInfo() {
