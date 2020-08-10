@@ -48,7 +48,12 @@ import {
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
-import { NullStream, Stream, StreamsSequenceStream } from "./stream.js";
+import {
+  NullStream,
+  Stream,
+  StreamsSequenceStream,
+  StringStream,
+} from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
 import { calculateMD5 } from "./crypto.js";
 import { Linearization } from "./parser.js";
@@ -125,11 +130,19 @@ class Page {
     // For robustness: The spec states that a \Resources entry has to be
     // present, but can be empty. Some documents still omit it; in this case
     // we return an empty dictionary.
-    return shadow(
-      this,
-      "resources",
-      this._getInheritableProperty("Resources") || Dict.empty
-    );
+
+    // XXX
+    // return shadow(
+    //   this,
+    //   "resources",
+    //   this._getInheritableProperty("Resources") || Dict.empty
+    // );
+    const resources = this._getInheritableProperty("Resources") || Dict.empty;
+    const acroForm = this.pdfManager.pdfDocument.acroForm;
+    if (acroForm && acroForm.defaultResources) {
+      resources.defaultResources = acroForm.defaultResources;
+    }
+    return shadow(this, "resources", resources);
   }
 
   _getBoundingBox(name) {
@@ -258,7 +271,7 @@ class Page {
       "XObject",
       "Font",
     ]);
-    this.defaultAppearance = this.pdfManager.pdfDocument.getDefaultAppearance(
+    this.defaultAppearance = this.pdfManager.pdfDocument.getDefaultAppearanceData(
       handler
     );
     console.log("defaultAppearance " + JSON.stringify(this.defaultAppearance));
@@ -555,6 +568,8 @@ class PDFDocument {
       if (this.acroForm) {
         this.xfa = this.acroForm.get("XFA");
         const fields = this.acroForm.get("Fields");
+        this.acroForm.defaultAppearance = this.acroForm.get("DA") || "";
+        this.acroForm.defaultResources = this.acroForm.get("DR") || Dict.empty;
         if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
           this.acroForm = null; // No fields and no XFA, so it's not a form.
         }
@@ -684,15 +699,16 @@ class PDFDocument {
     return shadow(this, "numPages", num);
   }
 
-  getDefaultAppearance(handler) {
-    if (this._defaultAppearance || !this.acroForm) {
-      return this._defaultAppearance;
+  getDefaultAppearanceData(handler) {
+    if (
+      this._defaultAppearance ||
+      !this.acroForm ||
+      this.acroForm.defaultAppearance
+    ) {
+      return Dict.empty;
     }
 
-    const defaultAppearanceString = this.acroForm.get("DA") || "";
-    console.log(`defaultAppearanceString ${defaultAppearanceString}`);
-    const defaultResources = this.acroForm.get("DR") || Dict.empty;
-    const appearanceStream = new Stream(stringToBytes(defaultAppearanceString));
+    const appearanceStream = new StringStream(this.acroForm.defaultAppearance);
     const opList = new OperatorList(null, null);
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
@@ -709,7 +725,7 @@ class PDFDocument {
       partialEvaluator.getAcroformDefaultAppearance({
         stream: appearanceStream,
         task: null,
-        resources: defaultResources,
+        resources: this.acroForm.defaultResources,
         operatorList: opList,
         defaultAppearance,
       })
