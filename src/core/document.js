@@ -740,7 +740,7 @@ class PDFDocument {
     if (
       this._defaultAppearance ||
       !this.acroForm ||
-      this.acroForm.defaultAppearance
+      !this.acroForm.defaultAppearance
     ) {
       return Dict.empty;
     }
