@@ -48,20 +48,16 @@ class AnnotationFactory {
    * @returns {Promise} A promise that is resolved with an {Annotation}
    *   instance.
    */
-  static create(xref, ref, pdfManager, idFactory) {
+  static create(xref, ref, pdfManager, idFactory, defaultAppearance) {
     return pdfManager.ensureDoc("acroForm").then(acroForm => {
-      return pdfManager
-        .ensureDoc("defaultAppearance")
-        .then(defaultAppearance => {
-          return pdfManager.ensure(this, "_create", [
-            xref,
-            ref,
-            pdfManager,
-            idFactory,
-            acroForm,
-            defaultAppearance,
-          ]);
-        });
+      return pdfManager.ensure(this, "_create", [
+        xref,
+        ref,
+        pdfManager,
+        idFactory,
+        acroForm,
+        defaultAppearance,
+      ]);
     });
   }
 
@@ -94,7 +90,7 @@ class AnnotationFactory {
       id,
       pdfManager,
       acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
-      defaultAppearance,
+      defaultAppearanceDict: defaultAppearance,
     };
 
     switch (subtype) {
