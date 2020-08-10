@@ -295,11 +295,10 @@ class Page {
       "XObject",
       "Font",
     ]);
-    this.defaultAppearance = this.pdfManager.pdfDocument(
-      "getDefaultAppearance",
+    this.defaultAppearance = this.pdfManager.pdfDocument.getDefaultAppearance(
       handler
     );
-    console.log(`defaultAppearance ${this.defaultAppearance}`);
+    console.log("defaultAppearance " + JSON.stringify(this.defaultAppearance));
 
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
