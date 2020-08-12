@@ -324,10 +324,8 @@ class Page {
       options: this.evaluatorOptions,
     });
 
-    const opList = new OperatorList(intent, sink);
     const defaultAppearancePromise = this.handleDefaultAppearance(
       partialEvaluator,
-      opList,
       task
     );
     const dataPromises = Promise.all([
@@ -336,6 +334,8 @@ class Page {
       defaultAppearancePromise,
     ]);
     const pageListPromise = dataPromises.then(([contentStream]) => {
+      const opList = new OperatorList(intent, sink);
+
       handler.send("StartRenderPage", {
         transparency: partialEvaluator.hasBlendModes(this.resources),
         pageIndex: this.pageIndex,
@@ -400,13 +400,15 @@ class Page {
     );
   }
 
-  handleDefaultAppearance(partialEvaluator, opList, task) {
+  handleDefaultAppearance(partialEvaluator, task) {
     if (this.defaultAppearanceData) {
       return Dict.empty;
     }
 
-    // const appearanceStream = new StringStream(this.defaultAppearance);
-    const appearanceStream = new StringStream("/Helv 8 Tf 255 0 0 rg");
+    const opList = new OperatorList();
+
+    const appearanceStream = new StringStream(this.defaultAppearance);
+    // const appearanceStream = new StringStream("/Helv 8 Tf 255 0 0 rg");
     this.defaultAppearanceData = Dict.empty;
     return partialEvaluator.getAcroformDefaultAppearanceData({
       stream: appearanceStream,
@@ -433,20 +435,27 @@ class Page {
       "XObject",
       "Font",
     ]);
+    const partialEvaluator = new PartialEvaluator({
+      xref: this.xref,
+      handler,
+      pageIndex: this.pageIndex,
+      idFactory: this._localIdFactory,
+      fontCache: this.fontCache,
+      builtInCMapCache: this.builtInCMapCache,
+      globalImageCache: this.globalImageCache,
+      options: this.evaluatorOptions,
+    });
+    const defaultAppearancePromise = this.handleDefaultAppearance(
+      partialEvaluator,
+      task
+    );
 
-    const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
+    const dataPromises = Promise.all([
+      contentStreamPromise,
+      resourcesPromise,
+      defaultAppearancePromise,
+    ]);
     return dataPromises.then(([contentStream]) => {
-      const partialEvaluator = new PartialEvaluator({
-        xref: this.xref,
-        handler,
-        pageIndex: this.pageIndex,
-        idFactory: this._localIdFactory,
-        fontCache: this.fontCache,
-        builtInCMapCache: this.builtInCMapCache,
-        globalImageCache: this.globalImageCache,
-        options: this.evaluatorOptions,
-      });
-
       return partialEvaluator.getTextContent({
         stream: contentStream,
         task,
@@ -630,7 +639,6 @@ class PDFDocument {
         this.xfa = this.acroForm.get("XFA");
         const fields = this.acroForm.get("Fields");
         this.acroForm.defaultAppearance = this.acroForm.get("DA") || "";
-        this.acroForm.defaultAppearance = "/Cour 8 Tf 0 255 255 rg";
         this.acroForm.defaultResources = this.acroForm.get("DR") || Dict.empty;
         if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
           this.acroForm = null; // No fields and no XFA, so it's not a form.

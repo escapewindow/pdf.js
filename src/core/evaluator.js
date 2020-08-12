@@ -2708,8 +2708,8 @@ class PartialEvaluator {
           featureId: UNSUPPORTED_FEATURES.errorOperatorList,
         });
         warn(
-          `getOperatorList - ignoring errors during "${task.name}" ` +
-            `task: "${reason}".`
+          `getAcroformDefaultAppearanceData - ignoring errors during ` +
+            `"${task.name}" task: "${reason}".`
         );
 
         closePendingRestoreOPS();

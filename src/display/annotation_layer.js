@@ -481,19 +481,15 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.classList.add("comb");
         element.style.letterSpacing = `calc(${combWidth}px - 1ch)`;
       }
-      if ("fontRefName" in this.data) {
-        console.log(
-          `TextWidgetAnnotationElement has fontRefName ${this.data.fontRefName}`
-        );
-        if (!this.page.commonObjs.has(this.data.fontRefName)) {
-          console.log(`commonObjs doesn't have ${this.data.fontRefName}`);
-        }
-      }
       if (
         this.data.fontRefName &&
         this.page.commonObjs.has(this.data.fontRefName)
       ) {
         font = this.page.commonObjs.get(this.data.fontRefName);
+        console.log(
+          `TextWidgetAnnotationElement has fontRefName ${this.data.fontRefName} font ` +
+            JSON.stringify(font)
+        );
       }
     } else {
       element = document.createElement("div");

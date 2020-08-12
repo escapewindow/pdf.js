@@ -1130,9 +1130,9 @@ class WidgetAnnotation extends Annotation {
   async _getFontData(evaluator, task) {
     const operatorList = new OperatorList();
     const initialState = {
-      fontSize: 0,
+      fontSize: this.data.fontSize || 0,
       font: null,
-      fontName: null,
+      fontName: this.data.fontName || null,
       clone() {
         return this;
       },
@@ -1201,7 +1201,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
     if (params.defaultAppearanceData) {
-      const keys = ["fontRefName", "fontSize", "fontColor"];
+      const keys = ["fontRefName", "fontName", "fontSize", "fontColor"];
       for (const key of keys) {
         if (key in params.defaultAppearanceData && !(key in this.data)) {
           console.log(`Setting ${key} to ${params.defaultAppearanceData[key]}`);
