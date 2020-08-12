@@ -619,7 +619,7 @@ class PDFDocument {
   }
 
   getDefaultAppearance(acroForm) {
-    const defaultAppearance = Dict.empty;
+    const defaultAppearanceData = Dict.empty;
     acroForm.defaultResources = acroForm.get("DR") || Dict.empty;
 
     const rawDA = acroForm.get("DA");
@@ -627,21 +627,21 @@ class PDFDocument {
       const parts = rawDA.split(/\s/);
       const idx = parts.indexOf("Tf");
       if (idx >= 1) {
-        defaultAppearance.fontSize = Number(parts[idx - 1]);
+        defaultAppearanceData.fontSize = Number(parts[idx - 1]);
       }
       if (idx >= 2) {
         let fontName = parts[idx - 2];
         // remove leading "/"
         fontName = fontName.slice(1, fontName.length);
-        defaultAppearance.fontName = fontName;
+        defaultAppearanceData.fontRefName = fontName;
       }
       // fontColor: search backwards
       for (let i = parts.length - 1; i >= 0; i--) {
         if (parts[i] === "g" && i >= 1) {
           const gray = Math.round(Number(parts[i - 1]) * 0x100);
-          defaultAppearance.fontColor = Util.makeCssRgb(gray, gray, gray);
+          defaultAppearanceData.fontColor = Util.makeCssRgb(gray, gray, gray);
         } else if (parts[i] === "rg" && i >= 3) {
-          defaultAppearance.fontColor = Util.makeCssRgb(
+          defaultAppearanceData.fontColor = Util.makeCssRgb(
             Number(parts[i - 3]),
             Number(parts[i - 2]),
             Number(parts[i - 1])
@@ -653,13 +653,13 @@ class PDFDocument {
             Number(parts[i - 2]),
             Number(parts[i - 1]),
           ];
-          defaultAppearance.fontColor = Util.makeCssRgb(
+          defaultAppearanceData.fontColor = Util.makeCssRgb(
             ColorSpace.singletons.cmyk.getRgb(args, 0)
           );
         }
       }
     }
-    acroForm.defaultAppearance = defaultAppearance;
+    acroForm.defaultAppearanceData = defaultAppearanceData;
   }
 
   get linearization() {
