@@ -324,17 +324,24 @@ class Page {
       options: this.evaluatorOptions,
     });
 
-    const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
+    const opList = new OperatorList(intent, sink);
+    const defaultAppearancePromise = this.handleDefaultAppearance(
+      partialEvaluator,
+      opList,
+      task
+    );
+    const dataPromises = Promise.all([
+      contentStreamPromise,
+      resourcesPromise,
+      defaultAppearancePromise,
+    ]);
+    console.log("page ");
     const pageListPromise = dataPromises.then(([contentStream]) => {
-      const opList = new OperatorList(intent, sink);
-
       handler.send("StartRenderPage", {
         transparency: partialEvaluator.hasBlendModes(this.resources),
         pageIndex: this.pageIndex,
         intent,
       });
-
-      this.handleDefaultAppearance(partialEvaluator, opList, task);
 
       return partialEvaluator
         .getOperatorList({
@@ -347,6 +354,7 @@ class Page {
           return opList;
         });
     });
+
 
     // Fetch the page's annotations and add their operator lists to the
     // page's operator list to render them.
@@ -395,16 +403,19 @@ class Page {
   }
 
   handleDefaultAppearance(partialEvaluator, opList, task) {
-    if (this.defaultAppearance) {
+    if (this.defaultAppearanceData) {
       return Dict.empty;
     }
 
-    const appearanceStream = new StringStream(this.defaultAppearance);
-    return partialEvaluator.getAcroformDefaultAppearance({
+    // const appearanceStream = new StringStream(this.defaultAppearance);
+    const appearanceStream = new StringStream("/Cour 7 Tf 255 0 0 rg");
+    this.defaultAppearanceData = Dict.empty;
+    return partialEvaluator.getAcroformDefaultAppearanceData({
       stream: appearanceStream,
       task,
       resources: this.defaultResources,
       operatorList: opList,
+      data: this.defaultAppearanceData,
     });
   }
 
@@ -481,8 +492,7 @@ class Page {
               annotationRef,
               this.pdfManager,
               this._localIdFactory,
-              // This assumes we've called getOperatorList already
-              this.defaultAppearance
+              this.defaultAppearanceData
             ).catch(function (reason) {
               warn(`_parsedAnnotations: "${reason}".`);
               return null;

@@ -2580,7 +2580,13 @@ class PartialEvaluator {
     });
   }
 
-  getAcroformDefaultAppearance({ stream, task, resources, operatorList }) {
+  getAcroformDefaultAppearanceData({
+    stream,
+    task,
+    resources,
+    operatorList,
+    data,
+  }) {
     resources = resources || Dict.empty;
     const initialState = new EvalState();
 
@@ -2635,7 +2641,6 @@ class PartialEvaluator {
         switch (fn | 0) {
           case OPS.setFont:
             var fontSize = args[1];
-            console.log(`font size ${fontSize}`);
             // eagerly collect all fonts
             next(
               self
@@ -2652,21 +2657,31 @@ class PartialEvaluator {
                   operatorList.addOp(OPS.setFont, [loadedName, fontSize]);
                 })
             );
+            data.fontRefName = args[0].name;
+            data.fontSize = fontSize;
             break;
           case OPS.setFillGray:
+            args = args.slice();
+            if (args.length < 1) {
+              warn("Incorrect annotation gray color length");
+            }
             // XXX copying setStrokeGray
             stateManager.state.fillColorSpace = ColorSpace.singletons.gray;
             args = ColorSpace.singletons.gray.getRgb(args, 0);
+            data.fontColor = Util.makeCssRgb(args[0], args[1], args[2]);
             fn = OPS.setFillRGBColor;
             break;
           case OPS.setFillRGBColor:
             stateManager.state.fillColorSpace = ColorSpace.singletons.rgb;
             args = ColorSpace.singletons.rgb.getRgb(args, 0);
+            data.fontColor = Util.makeCssRgb(args[0], args[1], args[2]);
             console.log("setFillRGBColor " + JSON.stringify(args));
             break;
           case OPS.setFillCMYKColor:
+            args = args.slice();
             stateManager.state.fillColorSpace = ColorSpace.singletons.cmyk;
             args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+            data.fontColor = Util.makeCssRgb(args[0], args[1], args[2]);
             fn = OPS.setFillRGBColor;
             break;
         }

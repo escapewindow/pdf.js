@@ -50,7 +50,7 @@ class AnnotationFactory {
    * @returns {Promise} A promise that is resolved with an {Annotation}
    *   instance.
    */
-  static create(xref, ref, pdfManager, idFactory) {
+  static create(xref, ref, pdfManager, idFactory, defaultAppearanceData) {
     return pdfManager.ensureDoc("acroForm").then(acroForm => {
       return pdfManager.ensure(this, "_create", [
         xref,
@@ -58,6 +58,7 @@ class AnnotationFactory {
         pdfManager,
         idFactory,
         acroForm,
+        defaultAppearanceData,
       ]);
     });
   }
@@ -65,10 +66,27 @@ class AnnotationFactory {
   /**
    * @private
    */
-  static _create(xref, ref, pdfManager, idFactory, acroForm) {
+  static _create(
+    xref,
+    ref,
+    pdfManager,
+    idFactory,
+    acroForm,
+    defaultAppearanceData
+  ) {
     const dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return undefined;
+    }
+
+    console.log("in _create");
+    defaultAppearanceData = defaultAppearanceData || Dict.empty;
+    const keys = ["fontRefName", "fontSize", "fontColor"];
+    for (const key of keys) {
+      // if (key in defaultAppearanceData && !(key in dict)) {
+      if (key in defaultAppearanceData) {
+        this.data[key] = defaultAppearanceData[key];
+      }
     }
 
     const id = isRef(ref) ? ref.toString() : `annot_${idFactory.createObjId()}`;
@@ -86,6 +104,10 @@ class AnnotationFactory {
       id,
       pdfManager,
       acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
+      defaultAppearanceData:
+        defaultAppearanceData instanceof Dict
+          ? defaultAppearanceData
+          : Dict.empty,
     };
 
     switch (subtype) {
@@ -1188,6 +1210,15 @@ class WidgetAnnotation extends Annotation {
 class TextWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
+    if (params.defaultAppearanceData) {
+      const keys = ["fontRefName", "fontSize", "fontColor"];
+      for (const key of keys) {
+        if (key in params.defaultAppearanceData && !(key in this.data)) {
+          console.log(`Setting ${key} to ${params.defaultAppearanceData[key]}`);
+          this.data[key] = params.defaultAppearanceData[key];
+        }
+      }
+    }
 
     this._hasText = true;
 

@@ -447,6 +447,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     this.container.className = "textWidgetAnnotation";
 
     let element = null;
+    let font = null;
     if (this.renderInteractiveForms) {
       // NOTE: We cannot set the values using `element.value` below, since it
       //       prevents the AnnotationLayer rasterizer in `test/driver.js`
@@ -480,21 +481,43 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.classList.add("comb");
         element.style.letterSpacing = `calc(${combWidth}px - 1ch)`;
       }
-    } else {
-      element = document.createElement("div");
-      element.textContent = this.data.fieldValue;
-      element.style.verticalAlign = "middle";
-      element.style.display = "table-cell";
-
-      let font = null;
+      if (this.data.fontRefName) {
+        console.log(
+          `TextWidgetAnnotationElement has fontRefName ${this.data.fontRefName}`
+        );
+        if (!this.page.commonObjs.has(this.data.fontRefName)) {
+          console.log(`commonObjs doesn't have ${this.data.fontRefName}`);
+        }
+      }
       if (
         this.data.fontRefName &&
         this.page.commonObjs.has(this.data.fontRefName)
       ) {
         font = this.page.commonObjs.get(this.data.fontRefName);
       }
-      this._setTextStyle(element, font);
+    } else {
+      element = document.createElement("div");
+      element.textContent = this.data.fieldValue;
+      element.style.verticalAlign = "middle";
+      element.style.display = "table-cell";
+
+      if (this.data.fontRefName) {
+        console.log(
+          `TextWidgetAnnotationElement has fontRefName ${this.data.fontRefName}`
+        );
+        if (!this.page.commonObjs.has(this.data.fontRefName)) {
+          console.log(`commonObjs doesn't have ${this.data.fontRefName}`);
+        }
+      }
+      if (
+        this.data.fontRefName &&
+        this.page.commonObjs.has(this.data.fontRefName)
+      ) {
+        font = this.page.commonObjs.get(this.data.fontRefName);
+      }
     }
+
+    this._setTextStyle(element, font);
 
     if (this.data.textAlignment !== null) {
       element.style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
