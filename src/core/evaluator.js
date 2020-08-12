@@ -2655,9 +2655,13 @@ class PartialEvaluator {
                 .then(function (loadedName) {
                   operatorList.addDependency(loadedName);
                   operatorList.addOp(OPS.setFont, [loadedName, fontSize]);
+                  console.log(
+                    `loadedName ${loadedName} args ` + JSON.stringify(args)
+                  );
+                  data.fontRefName = loadedName;
                 })
             );
-            data.fontRefName = args[0].name;
+            console.log("setFont args " + JSON.stringify(args));
             data.fontSize = fontSize;
             break;
           case OPS.setFillGray:

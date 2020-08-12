@@ -335,7 +335,6 @@ class Page {
       resourcesPromise,
       defaultAppearancePromise,
     ]);
-    console.log("page ");
     const pageListPromise = dataPromises.then(([contentStream]) => {
       handler.send("StartRenderPage", {
         transparency: partialEvaluator.hasBlendModes(this.resources),
@@ -354,7 +353,6 @@ class Page {
           return opList;
         });
     });
-
 
     // Fetch the page's annotations and add their operator lists to the
     // page's operator list to render them.
@@ -408,7 +406,7 @@ class Page {
     }
 
     // const appearanceStream = new StringStream(this.defaultAppearance);
-    const appearanceStream = new StringStream("/Cour 7 Tf 255 0 0 rg");
+    const appearanceStream = new StringStream("/Helv 8 Tf 255 0 0 rg");
     this.defaultAppearanceData = Dict.empty;
     return partialEvaluator.getAcroformDefaultAppearanceData({
       stream: appearanceStream,

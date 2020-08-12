@@ -481,7 +481,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.classList.add("comb");
         element.style.letterSpacing = `calc(${combWidth}px - 1ch)`;
       }
-      if (this.data.fontRefName) {
+      if ("fontRefName" in this.data) {
         console.log(
           `TextWidgetAnnotationElement has fontRefName ${this.data.fontRefName}`
         );
@@ -501,7 +501,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       element.style.verticalAlign = "middle";
       element.style.display = "table-cell";
 
-      if (this.data.fontRefName) {
+      if ("fontRefName" in this.data) {
         console.log(
           `TextWidgetAnnotationElement has fontRefName ${this.data.fontRefName}`
         );

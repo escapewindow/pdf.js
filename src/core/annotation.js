@@ -79,16 +79,6 @@ class AnnotationFactory {
       return undefined;
     }
 
-    console.log("in _create");
-    defaultAppearanceData = defaultAppearanceData || Dict.empty;
-    const keys = ["fontRefName", "fontSize", "fontColor"];
-    for (const key of keys) {
-      // if (key in defaultAppearanceData && !(key in dict)) {
-      if (key in defaultAppearanceData) {
-        this.data[key] = defaultAppearanceData[key];
-      }
-    }
-
     const id = isRef(ref) ? ref.toString() : `annot_${idFactory.createObjId()}`;
 
     // Determine the annotation's subtype.
