@@ -501,14 +501,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       element.style.verticalAlign = "middle";
       element.style.display = "table-cell";
 
-      if ("fontRefName" in this.data) {
-        console.log(
-          `TextWidgetAnnotationElement has fontRefName ${this.data.fontRefName}`
-        );
-        if (!this.page.commonObjs.has(this.data.fontRefName)) {
-          console.log(`commonObjs doesn't have ${this.data.fontRefName}`);
-        }
-      }
       if (
         this.data.fontRefName &&
         this.page.commonObjs.has(this.data.fontRefName)
