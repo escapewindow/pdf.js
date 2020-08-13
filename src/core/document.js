@@ -136,12 +136,6 @@ class Page {
     // present, but can be empty. Some documents still omit it; in this case
     // we return an empty dictionary.
 
-    // XXX
-    // return shadow(
-    //   this,
-    //   "resources",
-    //   this._getInheritableProperty("Resources") || Dict.empty
-    // );
     const resources = this._getInheritableProperty("Resources") || Dict.empty;
     const acroForm = this.pdfManager.pdfDocument.acroForm;
     if (acroForm && acroForm.defaultResources) {
@@ -452,7 +446,7 @@ class Page {
     });
 
     if (!this.defaultAppearancePromise) {
-      console.log(
+      warn(
         "extractTextContent ran before this.defaultAppearancePromise was set!"
       );
     }

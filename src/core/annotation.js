@@ -1205,7 +1205,6 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       const keys = ["fontRefName", "fontName", "fontSize", "fontColor"];
       for (const key of keys) {
         if (key in params.defaultAppearanceData && !(key in this.data)) {
-          console.log(`Setting ${key} to ${params.defaultAppearanceData[key]}`);
           this.data[key] = params.defaultAppearanceData[key];
         }
       }

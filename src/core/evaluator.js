@@ -2603,7 +2603,6 @@ class PartialEvaluator {
     var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
     var timeSlotManager = new TimeSlotManager();
 
-    // XXX needed?
     function closePendingRestoreOPS(argument) {
       for (var i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
         operatorList.addOp(OPS.restore, []);
@@ -2620,8 +2619,7 @@ class PartialEvaluator {
           }
         }, reject);
       };
-      // XXX do we need `task` and operatorList?
-      // task.ensureNotTerminated();
+      task.ensureNotTerminated();
       timeSlotManager.reset();
       var stop,
         operation = {};
@@ -2654,32 +2652,26 @@ class PartialEvaluator {
                 .then(function (loadedName) {
                   operatorList.addDependency(loadedName);
                   operatorList.addOp(OPS.setFont, [loadedName, fontSize]);
-                  console.log(`loadedName ${loadedName}`);
                   data.fontRefName = loadedName;
                 })
             );
             data.fontSize = fontSize;
-            console.log(`fontSize ${fontSize}`);
             break;
           case OPS.setFillGray:
-            // XXX copying setStrokeGray
             stateManager.state.fillColorSpace = ColorSpace.singletons.gray;
             args = ColorSpace.singletons.gray.getRgb(args, 0);
             data.fontColor = args;
-            console.log("gray fontColor " + JSON.stringify(args));
             fn = OPS.setFillRGBColor;
             break;
           case OPS.setFillRGBColor:
             stateManager.state.fillColorSpace = ColorSpace.singletons.rgb;
             args = ColorSpace.singletons.rgb.getRgb(args, 0);
             data.fontColor = args;
-            console.log("rgb fontColor " + JSON.stringify(args));
             break;
           case OPS.setFillCMYKColor:
             stateManager.state.fillColorSpace = ColorSpace.singletons.cmyk;
             args = ColorSpace.singletons.cmyk.getRgb(args, 0);
             data.fontColor = args;
-            console.log("gray fontColor " + JSON.stringify(args));
             fn = OPS.setFillRGBColor;
             break;
         }

@@ -486,10 +486,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         this.page.commonObjs.has(this.data.fontRefName)
       ) {
         font = this.page.commonObjs.get(this.data.fontRefName);
-        console.log(
-          `TextWidgetAnnotationElement has fontRefName ${this.data.fontRefName} font ` +
-            JSON.stringify(font)
-        );
       }
     } else {
       element = document.createElement("div");
@@ -548,14 +544,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     const fontFamily = font.loadedName ? `"${font.loadedName}", ` : "";
     const fallbackName = font.fallbackName || "Helvetica, sans-serif";
     style.fontFamily = fontFamily + fallbackName;
-    console.log(`font family ${style.fontFamily}`);
-    // XXX fontColor seems to be bogus; revisit original patchset?
-    if ("fontColor" in this.data && this.data.fontColor !== "") {
-      console.log(`data.color ` + JSON.stringify(this.data.color));
-      this.data.color = this.data.fontColor;
-      console.log(`fontColor ` + JSON.stringify(this.data.fontColor));
-      console.log(`data.color ` + JSON.stringify(this.data.color));
-    }
+    // XXX revisit fontColor
   }
 }
 
