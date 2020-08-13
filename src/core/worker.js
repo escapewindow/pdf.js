@@ -642,8 +642,7 @@ class WorkerMessageHandler {
         var task = new WorkerTask("GetTextContent: page " + pageIndex);
         startWorkerTask(task);
 
-        // NOTE: Keep this condition in sync with the `info` helper
-        // function.
+        // NOTE: Keep this condition in sync with the `info` helper function.
         const start = verbosity >= VerbosityLevel.INFOS ? Date.now() : 0;
 
         page
@@ -673,8 +672,8 @@ class WorkerMessageHandler {
               }
               sink.error(reason);
 
-              // TODO: Should `reason` be re-thrown here (currently that
-              // causes "Uncaught exception: ..." messages in the console)?
+              // TODO: Should `reason` be re-thrown here (currently that causes
+              //       "Uncaught exception: ..." messages in the console)?
             }
           );
       });

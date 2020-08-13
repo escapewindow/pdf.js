@@ -544,7 +544,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     const fontFamily = font.loadedName ? `"${font.loadedName}", ` : "";
     const fallbackName = font.fallbackName || "Helvetica, sans-serif";
     style.fontFamily = fontFamily + fallbackName;
-    // XXX revisit fontColor
+    // XXX revisit fontColor. Setting style.color doesn't stick.
   }
 }
 

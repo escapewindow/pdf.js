@@ -152,7 +152,7 @@ class BaseViewer {
       ? options.textLayerMode
       : TextLayerMode.ENABLE;
     this.imageResourcesPath = options.imageResourcesPath || "";
-    this.renderInteractiveForms = options.renderInteractiveForms || true;
+    this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
     this.enableWebGL = options.enableWebGL || false;
@@ -1158,7 +1158,7 @@ class BaseViewer {
     pdfPage,
     annotationStorage = null,
     imageResourcesPath = "",
-    renderInteractiveForms = true,
+    renderInteractiveForms = false,
     l10n = NullL10n
   ) {
     return new AnnotationLayerBuilder({
@@ -1166,7 +1166,7 @@ class BaseViewer {
       pdfPage,
       annotationStorage,
       imageResourcesPath,
-      renderInteractiveForms: true,
+      renderInteractiveForms,
       linkService: this.linkService,
       downloadManager: this.downloadManager,
       l10n,

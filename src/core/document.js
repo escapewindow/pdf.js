@@ -404,10 +404,7 @@ class Page {
 
     const opList = new OperatorList();
 
-    // const appearanceStream = new StringStream(this.defaultAppearance);
-    const appearanceStream = new StringStream(
-      "/CourierNewPSMT 8 Tf 255 0 0 rg"
-    );
+    const appearanceStream = new StringStream(this.defaultAppearance);
     this.defaultAppearanceData = Dict.empty;
     return partialEvaluator.getAcroformDefaultAppearanceData({
       stream: appearanceStream,

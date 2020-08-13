@@ -1352,13 +1352,6 @@ class TextWidgetAnnotation extends WidgetAnnotation {
 
     return chunks;
   }
-
-  setColor(color) {
-    if ("fontColor" in this.defaultAppearanceData) {
-      color = this.defaultAppearanceData.fontColor;
-    }
-    super.setColor(color);
-  }
 }
 
 class ButtonWidgetAnnotation extends WidgetAnnotation {
