@@ -94,6 +94,7 @@ class Page {
     this.globalImageCache = globalImageCache;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
+    this.defaultAppearancePromise = null;
     this.defaultAppearance = defaultAppearance;
     this.defaultResources = defaultResources;
 
@@ -324,14 +325,16 @@ class Page {
       options: this.evaluatorOptions,
     });
 
-    const defaultAppearancePromise = this.handleDefaultAppearance(
-      partialEvaluator,
-      task
-    );
+    if (!this.defaultAppearancePromise) {
+      this.defaultAppearancePromise = this.handleDefaultAppearance(
+        partialEvaluator,
+        task
+      );
+    }
     const dataPromises = Promise.all([
       contentStreamPromise,
       resourcesPromise,
-      defaultAppearancePromise,
+      this.defaultAppearancePromise,
     ]);
     const pageListPromise = dataPromises.then(([contentStream]) => {
       const opList = new OperatorList(intent, sink);
@@ -447,15 +450,17 @@ class Page {
       globalImageCache: this.globalImageCache,
       options: this.evaluatorOptions,
     });
-    const defaultAppearancePromise = this.handleDefaultAppearance(
-      partialEvaluator,
-      task
-    );
+
+    if (!this.defaultAppearancePromise) {
+      console.log(
+        "extractTextContent ran before this.defaultAppearancePromise was set!"
+      );
+    }
 
     const dataPromises = Promise.all([
       contentStreamPromise,
       resourcesPromise,
-      defaultAppearancePromise,
+      this.defaultAppearancePromise,
     ]);
     return dataPromises.then(([contentStream]) => {
       return partialEvaluator.getTextContent({
