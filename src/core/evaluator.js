@@ -2658,11 +2658,8 @@ class PartialEvaluator {
                   data.fontRefName = loadedName;
                 })
             );
-            // XXX if we save fontSize of 0, we get invisible text widget input
-            if (fontSize > 0) {
-              data.fontSize = fontSize;
-              console.log(`fontSize ${fontSize}`);
-            }
+            data.fontSize = fontSize;
+            console.log(`fontSize ${fontSize}`);
             break;
           case OPS.setFillGray:
             // XXX copying setStrokeGray

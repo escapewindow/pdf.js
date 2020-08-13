@@ -526,7 +526,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
   _setTextStyle(element, font) {
     // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
     const style = element.style;
-    if ("fontSize" in this.data) {
+    if (this.data.fontSize) {
       style.fontSize = `${this.data.fontSize}px`;
     }
     style.direction = this.data.fontDirection < 0 ? "rtl" : "ltr";
