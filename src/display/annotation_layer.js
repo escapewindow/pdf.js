@@ -526,7 +526,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
   _setTextStyle(element, font) {
     // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
     const style = element.style;
-    style.fontSize = `${this.data.fontSize}px`;
+    if ("fontSize" in this.data) {
+      style.fontSize = `${this.data.fontSize}px`;
+    }
     style.direction = this.data.fontDirection < 0 ? "rtl" : "ltr";
 
     if (!font) {
@@ -546,6 +548,14 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     const fontFamily = font.loadedName ? `"${font.loadedName}", ` : "";
     const fallbackName = font.fallbackName || "Helvetica, sans-serif";
     style.fontFamily = fontFamily + fallbackName;
+    console.log(`font family ${style.fontFamily}`);
+    // XXX fontColor seems to be bogus; revisit original patchset?
+    if ("fontColor" in this.data && this.data.fontColor !== "") {
+      console.log(`data.color ` + JSON.stringify(this.data.color));
+      this.data.color = this.data.fontColor;
+      console.log(`fontColor ` + JSON.stringify(this.data.fontColor));
+      console.log(`data.color ` + JSON.stringify(this.data.color));
+    }
   }
 }
 

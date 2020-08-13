@@ -2637,7 +2637,6 @@ class PartialEvaluator {
         var args = operation.args;
         var fn = operation.fn;
 
-        // XXX We're also only parsing DA, not DR; we're missing other fonts.
         switch (fn | 0) {
           case OPS.setFont:
             var fontSize = args[1];
@@ -2655,37 +2654,35 @@ class PartialEvaluator {
                 .then(function (loadedName) {
                   operatorList.addDependency(loadedName);
                   operatorList.addOp(OPS.setFont, [loadedName, fontSize]);
-                  console.log(
-                    `loadedName ${loadedName} args ` + JSON.stringify(args)
-                  );
+                  console.log(`loadedName ${loadedName}`);
                   data.fontRefName = loadedName;
                 })
             );
-            console.log("setFont args " + JSON.stringify(args));
-            data.fontSize = fontSize;
+            // XXX if we save fontSize of 0, we get invisible text widget input
+            if (fontSize > 0) {
+              data.fontSize = fontSize;
+              console.log(`fontSize ${fontSize}`);
+            }
             break;
           case OPS.setFillGray:
-            args = args.slice();
-            if (args.length < 1) {
-              warn("Incorrect annotation gray color length");
-            }
             // XXX copying setStrokeGray
             stateManager.state.fillColorSpace = ColorSpace.singletons.gray;
             args = ColorSpace.singletons.gray.getRgb(args, 0);
-            data.fontColor = Util.makeCssRgb(args[0], args[1], args[2]);
+            data.fontColor = args;
+            console.log("gray fontColor " + JSON.stringify(args));
             fn = OPS.setFillRGBColor;
             break;
           case OPS.setFillRGBColor:
             stateManager.state.fillColorSpace = ColorSpace.singletons.rgb;
             args = ColorSpace.singletons.rgb.getRgb(args, 0);
-            data.fontColor = Util.makeCssRgb(args[0], args[1], args[2]);
-            console.log("setFillRGBColor " + JSON.stringify(args));
+            data.fontColor = args;
+            console.log("rgb fontColor " + JSON.stringify(args));
             break;
           case OPS.setFillCMYKColor:
-            args = args.slice();
             stateManager.state.fillColorSpace = ColorSpace.singletons.cmyk;
             args = ColorSpace.singletons.cmyk.getRgb(args, 0);
-            data.fontColor = Util.makeCssRgb(args[0], args[1], args[2]);
+            data.fontColor = args;
+            console.log("gray fontColor " + JSON.stringify(args));
             fn = OPS.setFillRGBColor;
             break;
         }

@@ -249,6 +249,7 @@ class Annotation {
   constructor(params) {
     const dict = params.dict;
 
+    this.defaultAppearanceData = params.defaultAppearanceData;
     this.setContents(dict.get("Contents"));
     this.setModificationDate(dict.get("M"));
     this.setFlags(dict.get("F"));
@@ -1351,6 +1352,13 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     }
 
     return chunks;
+  }
+
+  setColor(color) {
+    if ("fontColor" in this.defaultAppearanceData) {
+      color = this.defaultAppearanceData.fontColor;
+    }
+    super.setColor(color);
   }
 }
 
