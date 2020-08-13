@@ -94,7 +94,8 @@ class Page {
     this.globalImageCache = globalImageCache;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
-    this.defaultAppearancePromise = null;
+    this.defaultAppearanceDataPromise = null;
+    this.defaultAppearanceData = null;
     this.defaultAppearance = defaultAppearance;
     this.defaultResources = defaultResources;
 
@@ -319,17 +320,13 @@ class Page {
       options: this.evaluatorOptions,
     });
 
-    if (!this.defaultAppearancePromise) {
-      this.defaultAppearancePromise = this.handleDefaultAppearance(
-        partialEvaluator,
-        task
+    if (!this.defaultAppearanceDataPromise) {
+      this.defaultAppearanceDataPromise = this.pdfManager.ensureDoc(
+        "getDefaultAppearanceData",
+        [partialEvaluator, task]
       );
     }
-    const dataPromises = Promise.all([
-      contentStreamPromise,
-      resourcesPromise,
-      this.defaultAppearancePromise,
-    ]);
+    const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
     const pageListPromise = dataPromises.then(([contentStream]) => {
       const opList = new OperatorList(intent, sink);
 
@@ -353,65 +350,51 @@ class Page {
 
     // Fetch the page's annotations and add their operator lists to the
     // page's operator list to render them.
-    return Promise.all([pageListPromise, this._parsedAnnotations]).then(
-      function ([pageOpList, annotations]) {
-        if (annotations.length === 0) {
-          pageOpList.flush(true);
-          return { length: pageOpList.totalLength };
-        }
-
-        // Collect the operator list promises for the annotations. Each promise
-        // is resolved with the complete operator list for a single annotation.
-        const opListPromises = [];
-        for (const annotation of annotations) {
-          if (isAnnotationRenderable(annotation, intent)) {
-            opListPromises.push(
-              annotation
-                .getOperatorList(
-                  partialEvaluator,
-                  task,
-                  renderInteractiveForms,
-                  annotationStorage
-                )
-                .catch(function (reason) {
-                  warn(
-                    "getOperatorList - ignoring annotation data during " +
-                      `"${task.name}" task: "${reason}".`
-                  );
-                  return null;
-                })
-            );
-          }
-        }
-
-        return Promise.all(opListPromises).then(function (opLists) {
-          pageOpList.addOp(OPS.beginAnnotations, []);
-          for (const opList of opLists) {
-            pageOpList.addOpList(opList);
-          }
-          pageOpList.addOp(OPS.endAnnotations, []);
-          pageOpList.flush(true);
-          return { length: pageOpList.totalLength };
-        });
+    return Promise.all([
+      this.defaultAppearanceDataPromise,
+      pageListPromise,
+      this._parsedAnnotations,
+    ]).then(function ([defaultAppearanceData, pageOpList, annotations]) {
+      this.defaultAppearanceData =
+        this.defaultAppearanceData || defaultAppearanceData;
+      if (annotations.length === 0) {
+        pageOpList.flush(true);
+        return { length: pageOpList.totalLength };
       }
-    );
-  }
 
-  handleDefaultAppearance(partialEvaluator, task) {
-    if (this.defaultAppearanceData) {
-      return new Promise();
-    }
+      // Collect the operator list promises for the annotations. Each promise
+      // is resolved with the complete operator list for a single annotation.
+      const opListPromises = [];
+      for (const annotation of annotations) {
+        if (isAnnotationRenderable(annotation, intent)) {
+          opListPromises.push(
+            annotation
+              .getOperatorList(
+                partialEvaluator,
+                task,
+                renderInteractiveForms,
+                annotationStorage
+              )
+              .catch(function (reason) {
+                warn(
+                  "getOperatorList - ignoring annotation data during " +
+                    `"${task.name}" task: "${reason}".`
+                );
+                return null;
+              })
+          );
+        }
+      }
 
-    const opList = new OperatorList();
-
-    const appearanceStream = new StringStream(this.defaultAppearance);
-    this.defaultAppearanceData = Dict.empty;
-    return partialEvaluator.getAcroformDefaultAppearanceData({
-      stream: appearanceStream,
-      task,
-      resources: this.defaultResources,
-      operatorList: opList,
-      data: this.defaultAppearanceData,
+      return Promise.all(opListPromises).then(function (opLists) {
+        pageOpList.addOp(OPS.beginAnnotations, []);
+        for (const opList of opLists) {
+          pageOpList.addOpList(opList);
+        }
+        pageOpList.addOp(OPS.endAnnotations, []);
+        pageOpList.flush(true);
+        return { length: pageOpList.totalLength };
+      });
     });
   }
 
@@ -441,19 +424,21 @@ class Page {
       globalImageCache: this.globalImageCache,
       options: this.evaluatorOptions,
     });
-
-    if (!this.defaultAppearancePromise) {
-      warn(
-        "extractTextContent ran before this.defaultAppearancePromise was set!"
+    if (!this.defaultAppearanceDataPromise) {
+      this.defaultAppearanceDataPromise = this.pdfManager.ensureDoc(
+        "getDefaultAppearanceData",
+        [partialEvaluator, task]
       );
     }
 
     const dataPromises = Promise.all([
       contentStreamPromise,
-      resourcesPromise,
       this.defaultAppearancePromise,
+      resourcesPromise,
     ]);
-    return dataPromises.then(([contentStream]) => {
+    return dataPromises.then(([contentStream, defaultAppearanceData]) => {
+      this.defaultAppearanceData =
+        this.defaultAppearanceData || defaultAppearanceData;
       return partialEvaluator.getTextContent({
         stream: contentStream,
         task,
@@ -602,7 +587,7 @@ class PDFDocument {
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
     this._pagePromises = [];
-    this._defaultAppearance = null;
+    this._defaultAppearanceData = null;
 
     const idCounters = {
       font: 0,
@@ -905,6 +890,32 @@ class PDFDocument {
       .catch(reason => {
         info(reason);
         return catalog.getPageDict(pageIndex);
+      });
+  }
+
+  getDefaultAppearance(partialEvaluator, task) {
+    if (this._defaultAppearanceData) {
+      return this._defaultAppearanceData;
+    }
+
+    const opList = new OperatorList();
+
+    // const defaultAppearance = this.acroForm
+    //  ? this.acroForm.defaultAppearance
+    //  : "";
+    const defaultAppearance = "/CourierNewPSMT 4 Tf 25 g";
+    const appearanceStream = new StringStream(defaultAppearance);
+    this._defaultAppearanceData = Dict.empty;
+    return partialEvaluator
+      .getAcroformDefaultAppearanceData({
+        stream: appearanceStream,
+        task,
+        resources: this.acroForm ? this.acroForm.defaultResources : Dict.empty,
+        operatorList: opList,
+        data: this._defaultAppearanceData,
+      })
+      .then(() => {
+        return this._defaultAppearanceData;
       });
   }
 
