@@ -399,7 +399,7 @@ class Page {
 
   handleDefaultAppearance(partialEvaluator, task) {
     if (this.defaultAppearanceData) {
-      return Dict.empty;
+      return new Promise();
     }
 
     const opList = new OperatorList();
