@@ -1131,9 +1131,9 @@ class WidgetAnnotation extends Annotation {
   async _getFontData(evaluator, task) {
     const operatorList = new OperatorList();
     const initialState = {
-      fontSize: this.data.fontSize || 0,
+      fontSize: 0,
       font: null,
-      fontName: this.data.fontName || null,
+      fontName: null,
       clone() {
         return this;
       },
