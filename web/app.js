@@ -713,6 +713,19 @@ const PDFViewerApplication = {
       return undefined;
     }
 
+    // Unsaved form: are you sure?
+    if (
+      PDFViewerApplication.pdfDocument &&
+      PDFViewerApplication.pdfDocument.annotationStorage.size > 0
+    ) {
+      // XXX Is close() the right place?
+      // XXX L10n string
+      const result = window.confirm("Are you sure? Unsaved form");
+      if (!result) {
+        return undefined;
+      }
+    }
+
     const promise = this.pdfLoadingTask.destroy();
     this.pdfLoadingTask = null;
 
