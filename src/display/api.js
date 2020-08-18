@@ -163,6 +163,9 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   parsed font data from the worker-thread. This may be useful for debugging
  *   purposes (and backwards compatibility), but note that it will lead to
  *   increased memory usage. The default value is `false`.
+ * @property {HTMLDocument} [ownerDocument] - Specify an explicit document
+ *   context to create elements with and to load resources, such as fonts,
+ *   into. Defaults to the current document.
  * @property {boolean} [disableRange] - Disable range request loading of PDF
  *   files. When enabled, and if the server supports partial content requests,
  *   then the PDF will be fetched in chunks. The default value is `false`.
@@ -281,6 +284,9 @@ function getDocument(src) {
   }
   if (typeof params.disableFontFace !== "boolean") {
     params.disableFontFace = apiCompatibilityParams.disableFontFace || false;
+  }
+  if (typeof params.ownerDocument === "undefined") {
+    params.ownerDocument = globalThis.document;
   }
 
   if (typeof params.disableRange !== "boolean") {
@@ -450,7 +456,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
  *   {@link UNSUPPORTED_FEATURES} argument.
  * @property {Promise<PDFDocumentProxy>} promise - Promise for document loading
  *   task completion.
- * @property {Promise<void>} destroy - Abort all network requests and destroy
+ * @property {function} destroy - Abort all network requests and destroy
  *   the worker. Returns a promise that is resolved when destruction is
  *   completed.
  */
@@ -626,14 +632,13 @@ class PDFDocumentProxy {
   constructor(pdfInfo, transport) {
     this._pdfInfo = pdfInfo;
     this._transport = transport;
-    this._annotationStorage = new AnnotationStorage();
   }
 
   /**
    * @type {AnnotationStorage} Storage for annotation data in forms.
    */
   get annotationStorage() {
-    return this._annotationStorage;
+    return shadow(this, "annotationStorage", new AnnotationStorage());
   }
 
   /**
@@ -862,6 +867,16 @@ class PDFDocumentProxy {
   get loadingTask() {
     return this._transport.loadingTask;
   }
+
+  /**
+   * @param {AnnotationStorage} annotationStorage - Storage for annotation
+   *   data in forms.
+   * @returns {Promise<Uint8Array>} A promise that is resolved with a
+   *   {Uint8Array} containing the full data of the saved document.
+   */
+  saveDocument(annotationStorage) {
+    return this._transport.saveDocument(annotationStorage);
+  }
 }
 
 /**
@@ -976,9 +991,10 @@ class PDFDocumentProxy {
  * Proxy to a `PDFPage` in the worker thread.
  */
 class PDFPageProxy {
-  constructor(pageIndex, pageInfo, transport, pdfBug = false) {
+  constructor(pageIndex, pageInfo, transport, ownerDocument, pdfBug = false) {
     this._pageIndex = pageIndex;
     this._pageInfo = pageInfo;
+    this._ownerDocument = ownerDocument;
     this._transport = transport;
     this._stats = pdfBug ? new StatTimer() : null;
     this._pdfBug = pdfBug;
@@ -1111,7 +1127,9 @@ class PDFPageProxy {
       intentState.streamReaderCancelTimeout = null;
     }
 
-    const canvasFactoryInstance = canvasFactory || new DefaultCanvasFactory();
+    const canvasFactoryInstance =
+      canvasFactory ||
+      new DefaultCanvasFactory({ ownerDocument: this._ownerDocument });
     const webGLContext = new WebGLContext({
       enable: enableWebGL,
     });
@@ -2028,6 +2046,7 @@ class WorkerTransport {
     this.fontLoader = new FontLoader({
       docId: loadingTask.docId,
       onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
+      ownerDocument: params.ownerDocument,
     });
     this._params = params;
     this.CMapReaderFactory = new params.CMapReaderFactory({
@@ -2252,11 +2271,16 @@ class WorkerTransport {
           reason = new UnknownErrorException(ex.message, ex.details);
           break;
       }
-      if (
-        typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || TESTING")
-      ) {
-        assert(reason instanceof Error, "DocException: expected an Error.");
+      if (!(reason instanceof Error)) {
+        const msg = "DocException - expected a valid Error.";
+        if (
+          typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")
+        ) {
+          unreachable(msg);
+        } else {
+          warn(msg);
+        }
       }
       loadingTask._capability.reject(reason);
     });
@@ -2484,6 +2508,7 @@ class WorkerTransport {
           pageIndex,
           pageInfo,
           this,
+          this._params.ownerDocument,
           this._params.pdfBug
         );
         this.pageCache[pageIndex] = page;
@@ -2507,6 +2532,15 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetAnnotations", {
       pageIndex,
       intent,
+    });
+  }
+
+  saveDocument(annotationStorage) {
+    return this.messageHandler.sendWithPromise("SaveDocument", {
+      numPages: this._numPages,
+      annotationStorage:
+        (annotationStorage && annotationStorage.getAll()) || null,
+      filename: this._fullReader.filename,
     });
   }
 

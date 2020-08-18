@@ -624,7 +624,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         "annotation-name",
         encodeURIComponent(this.data.fieldName)
       );
-      element.addEventListener("change", function (event) {
+      element.addEventListener("input", function (event) {
         storage.setValue(id, event.target.value);
       });
 
@@ -1133,6 +1133,11 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         const value = options[options.selectedIndex].text;
         storage.setValue(id, value);
       });
+      selectElement.addEventListener("input", function (event) {
+        const options = event.target.options;
+        const value = options[options.selectedIndex].text;
+        storage.setValue(id, value);
+      });
 
       this.container.appendChild(selectElement);
     } else {
@@ -1419,6 +1424,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       `[name='${itemName}']{${styleExpression}}`;
 
     document.body.appendChild(cssClass);
+    });
 
     return this.container;
   }
