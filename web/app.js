@@ -700,6 +700,18 @@ const PDFViewerApplication = {
     document.title = title;
   },
 
+  beforeUnload() {
+    // Unsaved form: are you sure?
+    if (
+      PDFViewerApplication.pdfDocument &&
+      PDFViewerApplication.pdfDocument.annotationStorage.size > 0
+    ) {
+      // XXX l10n string
+      return window.confirm("Are you sure? Unsaved form");
+    }
+    return true;
+  },
+
   /**
    * Closes opened PDF document.
    * @returns {Promise} - Returns the promise, which is resolved when all
@@ -711,19 +723,6 @@ const PDFViewerApplication = {
 
     if (!this.pdfLoadingTask) {
       return undefined;
-    }
-
-    // Unsaved form: are you sure?
-    if (
-      PDFViewerApplication.pdfDocument &&
-      PDFViewerApplication.pdfDocument.annotationStorage.size > 0
-    ) {
-      // XXX Is close() the right place?
-      // XXX L10n string
-      const result = window.confirm("Are you sure? Unsaved form");
-      if (!result) {
-        return undefined;
-      }
     }
 
     const promise = this.pdfLoadingTask.destroy();
