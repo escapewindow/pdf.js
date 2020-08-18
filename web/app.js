@@ -1717,11 +1717,13 @@ const PDFViewerApplication = {
 
     _boundEvents.beforePrint = this.beforePrint.bind(this);
     _boundEvents.afterPrint = this.afterPrint.bind(this);
+    _boundEvents.beforeUnload = this.beforeUnload.bind(this);
 
     eventBus._on("resize", webViewerResize);
     eventBus._on("hashchange", webViewerHashchange);
     eventBus._on("beforeprint", _boundEvents.beforePrint);
     eventBus._on("afterprint", _boundEvents.afterPrint);
+    eventBus._on("beforeunload", _boundEvents.beforeUnload);
     eventBus._on("pagerendered", webViewerPageRendered);
     eventBus._on("updateviewarea", webViewerUpdateViewarea);
     eventBus._on("pagechanging", webViewerPageChanging);
@@ -1778,6 +1780,9 @@ const PDFViewerApplication = {
     _boundEvents.windowAfterPrint = () => {
       eventBus.dispatch("afterprint", { source: window });
     };
+    _boundEvents.windowBeforeUnload = () => {
+      eventBus.dispatch("beforeunload", { source: window });
+    };
 
     window.addEventListener("visibilitychange", webViewerVisibilityChange);
     window.addEventListener("wheel", webViewerWheel, { passive: false });
@@ -1791,6 +1796,7 @@ const PDFViewerApplication = {
     window.addEventListener("hashchange", _boundEvents.windowHashChange);
     window.addEventListener("beforeprint", _boundEvents.windowBeforePrint);
     window.addEventListener("afterprint", _boundEvents.windowAfterPrint);
+    window.addEventListener("beforeunload", _boundEvents.windowBeforeUnload);
   },
 
   unbindEvents() {
@@ -1839,6 +1845,7 @@ const PDFViewerApplication = {
 
     _boundEvents.beforePrint = null;
     _boundEvents.afterPrint = null;
+    _boundEvents.beforeUnload = null;
   },
 
   unbindWindowEvents() {
@@ -1856,11 +1863,13 @@ const PDFViewerApplication = {
     window.removeEventListener("hashchange", _boundEvents.windowHashChange);
     window.removeEventListener("beforeprint", _boundEvents.windowBeforePrint);
     window.removeEventListener("afterprint", _boundEvents.windowAfterPrint);
+    window.removeEventListener("beforeunload", _boundEvents.windowBeforeUnload);
 
     _boundEvents.windowResize = null;
     _boundEvents.windowHashChange = null;
     _boundEvents.windowBeforePrint = null;
     _boundEvents.windowAfterPrint = null;
+    _boundEvents.windowBeforeUnload = null;
   },
 
   accumulateWheelTicks(ticks) {
