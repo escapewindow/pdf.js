@@ -828,10 +828,13 @@ class WidgetAnnotation extends Annotation {
       "";
     const fieldType = getInheritableProperty({ dict, key: "FT" });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
+
     this.fieldResources =
-      getInheritableProperty({ dict, key: "DR" }) ||
-      params.acroForm.get("DR") ||
-      Dict.empty;
+      getInheritableProperty({ dict, key: "DR" }) || Dict.empty;
+    this.fieldResources.set(
+      "defaultDocumentAppearance",
+      params.acroForm.get("DR") || Dict.empty
+    );
 
     data.fieldFlags = getInheritableProperty({ dict, key: "Ff" });
     if (!Number.isInteger(data.fieldFlags) || data.fieldFlags < 0) {
@@ -916,6 +919,7 @@ class WidgetAnnotation extends Annotation {
       return Promise.resolve(new OperatorList());
     }
 
+    console.log(`widget DA ${this.data.defaultAppearance}`);
     if (!this._hasText) {
       return super.getOperatorList(
         evaluator,
@@ -959,17 +963,29 @@ class WidgetAnnotation extends Annotation {
           matrix,
         ]);
 
-        const stream = new StringStream(content);
+        const daStream = new StringStream(this.data.defaultAppearance);
         return evaluator
-          .getOperatorList({
-            stream,
+          .getAcroformDefaultApperanceData({
+            daStream,
             task,
             resources: this.fieldResources,
             operatorList,
+            data: this.defaultAppearanceData,
           })
           .then(function () {
-            operatorList.addOp(OPS.endAnnotation, []);
-            return operatorList;
+            this._updateFonts(this.defaultAppearanceData);
+            const stream = new StringStream(content);
+            return evaluator
+              .getOperatorList({
+                stream,
+                task,
+                resources: this.fieldResources,
+                operatorList,
+              })
+              .then(function () {
+                operatorList.addOp(OPS.endAnnotation, []);
+                return operatorList;
+              });
           });
       }
     );
@@ -1131,9 +1147,9 @@ class WidgetAnnotation extends Annotation {
   async _getFontData(evaluator, task) {
     const operatorList = new OperatorList();
     const initialState = {
-      fontSize: 0,
-      font: null,
-      fontName: null,
+      fontSize: this.data.get("fontSize", 0),
+      font: this.data.get("fontRefName", null),
+      fontName: this.data.get("fontName", null),
       clone() {
         return this;
       },
@@ -1201,14 +1217,7 @@ class WidgetAnnotation extends Annotation {
 class TextWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
-    if (params.defaultAppearanceData) {
-      const keys = ["fontRefName", "fontName", "fontSize", "fontColor"];
-      for (const key of keys) {
-        if (key in params.defaultAppearanceData && !(key in this.data)) {
-          this.data[key] = params.defaultAppearanceData[key];
-        }
-      }
-    }
+    this._updateFonts(this.defaultAppearanceData);
 
     this._hasText = true;
 
@@ -1239,6 +1248,15 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
       !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
       this.data.maxLen !== null;
+  }
+
+  _updateFonts(defaultAppearanceData) {
+    const keys = ["fontRefName", "fontName", "fontSize", "fontColor"];
+    for (const key of keys) {
+      if (key in defaultAppearanceData && !(key in this.data)) {
+        this.data[key] = defaultAppearanceData[key];
+      }
+    }
   }
 
   _getCombAppearance(defaultAppearance, text, width, hPadding, vPadding) {
