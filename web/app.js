@@ -700,14 +700,16 @@ const PDFViewerApplication = {
     document.title = title;
   },
 
-  beforeUnload() {
+  beforeUnload(e) {
     // Unsaved form: are you sure?
+    console.log("beforeUnload called");
     if (
       PDFViewerApplication.pdfDocument &&
       PDFViewerApplication.pdfDocument.annotationStorage.size > 0
     ) {
       // XXX l10n string
-      return window.confirm("Are you sure? Unsaved form");
+      e.preventDefault();
+      e.returnValue = "";
     }
     return true;
   },
