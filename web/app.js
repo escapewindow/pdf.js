@@ -1418,14 +1418,18 @@ const PDFViewerApplication = {
       this.setTitle(contentDispositionFilename);
     }
 
-    if (info.IsXFAPresent) {
-      console.warn("Warning: XFA is not supported");
-    } else if (
-      info.IsAcroFormPresent &&
-      !this.pdfViewer.renderInteractiveForms
-    ) {
-      console.warn("Warning: AcroForm support is not enabled");
-      this._delayedFallback(UNSUPPORTED_FEATURES.forms);
+    if (info.IsAcroFormPresent) {
+      const fields = pdfDocument.acroForm.get("fields");
+      if (
+        info.IsXFAPresent &&
+        (!Array.isArray(fields) || fields.length === 0)
+      ) {
+        console.warn("Warning: XFA is not supported");
+        this._delayedFallback(UNSUPPORTED_FEATURES.forms);
+      } else if (!this.pdfViewer.renderInteractiveForms) {
+        console.warn("Warning: AcroForm support is not enabled");
+        this._delayedFallback(UNSUPPORTED_FEATURES.forms);
+      }
     }
 
     // Telemetry labels must be C++ variable friendly.
