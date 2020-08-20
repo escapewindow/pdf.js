@@ -1420,7 +1420,6 @@ const PDFViewerApplication = {
 
     if (info.IsXFAPresent) {
       console.warn("Warning: XFA is not supported");
-      this._delayedFallback(UNSUPPORTED_FEATURES.forms);
     } else if (
       info.IsAcroFormPresent &&
       !this.pdfViewer.renderInteractiveForms
